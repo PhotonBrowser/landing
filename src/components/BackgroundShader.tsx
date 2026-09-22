@@ -2,11 +2,12 @@ import { useEffect, useRef } from "react";
 
 const vertex = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
 const fragment = `
-precision mediump float;
+precision highp float;
 uniform vec2 resolution;
 uniform float time;
 uniform float storm;
 uniform float lightning;
+uniform vec2 lightningPosition;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -29,20 +30,29 @@ void main() {
   vec2 p = uv * vec2(2.4, 1.7);
   vec2 slowSpace = p * 0.72 + vec2(time * 0.018, time * 0.006);
   vec2 fastSpace = p * 1.28 + vec2(-time * 0.028, time * 0.012);
+  vec2 deepSpace = p * 0.44 + vec2(-time * 0.006, time * 0.003);
   vec2 warp = vec2(fbm(slowSpace * 0.55 + vec2(2.4, 7.1)), fbm(slowSpace * 0.55 + vec2(8.3, 1.6)));
   float baseShape = fbm(slowSpace + (warp - 0.5) * 0.9);
   float baseDetail = fbm(slowSpace * 2.2 + 4.0);
   float baseCloud = smoothstep(0.37, 0.58, baseShape + baseDetail * 0.1);
   float highCloud = smoothstep(0.48, 0.68, fbm(fastSpace + vec2(3.7, 1.2)));
-  float cloud = pow(mix(baseCloud, highCloud, 0.22), 0.72);
+  float deepCloud = smoothstep(0.34, 0.64, fbm(deepSpace + vec2(5.2, 2.8)));
+  float wispyCloud = smoothstep(0.54, 0.72, fbm(p * 3.6 + vec2(time * 0.009, -time * 0.004) + vec2(1.8, 6.4)));
+  float cloud = clamp(pow(mix(baseCloud, highCloud, 0.22) * 0.72 + deepCloud * 0.28 + wispyCloud * 0.12, 0.72), 0.0, 1.0);
   float rim = smoothstep(0.24, 0.72, cloud) * (1.0 - smoothstep(0.62, 0.98, cloud));
+  vec2 flashOffset = (uv - lightningPosition) * vec2(1.0, 1.3);
+  float lightningArea = exp(-dot(flashOffset, flashOffset) * 11.0);
+  float cloudDetail = clamp(baseDetail * 0.45 + deepCloud * 0.35 + wispyCloud * 0.2, 0.0, 1.0);
   vec3 sky = mix(vec3(0.45, 0.78, 0.88), vec3(0.66, 0.88, 0.94), uv.y);
-  vec3 light = mix(vec3(0.98, 1.0, 1.0), vec3(0.52, 0.57, 0.63), storm);
-  light += vec3(0.08, 0.1, 0.12) * rim * (1.0 - storm);
-  light += vec3(0.26, 0.29, 0.32) * lightning * (0.25 + cloud * 0.75);
-  sky = mix(sky, vec3(0.32, 0.4, 0.48), storm);
-  sky += vec3(0.72, 0.78, 0.84) * lightning * (0.18 + 0.42 * uv.y);
-  float focus = smoothstep(0.95, 0.2, distance(uv, vec2(0.5, 0.52)));
+  vec3 light = mix(vec3(0.98, 1.0, 1.0), vec3(0.23, 0.3, 0.38), storm);
+  light += vec3(0.06, 0.08, 0.1) * rim;
+  light -= vec3(0.1, 0.12, 0.14) * deepCloud * (0.3 + 0.7 * (1.0 - uv.y));
+  light += vec3(0.24, 0.28, 0.34) * lightning * lightningArea * cloud * (0.24 + cloudDetail * 0.76);
+  sky = mix(sky, vec3(0.1, 0.16, 0.23), storm);
+  float cloudGap = 1.0 - smoothstep(0.28, 0.72, cloud);
+  sky += vec3(0.72, 0.8, 0.92) * lightning * cloudGap * (0.05 + lightningArea * 0.95) * (0.24 + 0.76 * uv.y);
+  // Keep smoothstep's edges ordered; reversed edges are undefined in GLSL ES.
+  float focus = 1.0 - smoothstep(0.2, 0.95, distance(uv, vec2(0.5, 0.52)));
   gl_FragColor = vec4(mix(sky, light, min(0.98, cloud + focus * 0.03)), 1.0);
 }`;
 
@@ -67,7 +77,9 @@ export default function BackgroundShader() {
 		gl.attachShader(program, compile(gl.VERTEX_SHADER, vertex));
 		gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragment));
 		gl.linkProgram(program);
-		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+			throw new Error(gl.getProgramInfoLog(program) ?? "Shader program linking failed");
+		}
 		gl.useProgram(program);
 
 		const buffer = gl.createBuffer();
@@ -80,82 +92,49 @@ export default function BackgroundShader() {
 		const time = gl.getUniformLocation(program, "time");
 		const storm = gl.getUniformLocation(program, "storm");
 		const lightning = gl.getUniformLocation(program, "lightning");
+		const lightningPosition = gl.getUniformLocation(program, "lightningPosition");
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		let frame = 0;
-		let stormLevel = 0;
-		let stormTarget = 0;
-		let stormEndTimer = 0;
 		const started = performance.now();
-		const weatherTransitionMs = 2_500;
-		const stormAudioTailMs = 7_000;
-		let stormTransitionStart = started;
-		let stormTransitionFrom = 0;
 		let lightningLevel = 0;
 		let lightningTimer = 0;
 		let lastRender = started;
 		let lastAudioStormLevel = -1;
-		let stormClosing = false;
-		const isDev = import.meta.env.DEV;
-		const permanentStorm = false;
-		const stormChance = isDev ? 0.85 : 0.5;
-		const cycleDelay = isDev ? 15_000 : 5 * 60_000;
-		let cycleTimer = 0;
+		let currentLightningPosition: [number, number] = [0.5, 0.5];
+		const stormLevel = 1;
+		const stormTarget = 1;
+		const lightningChance = 0.68;
+		const nextLightningDelay = () => 18_000 + Math.random() * 42_000;
+
+		document.body.classList.add("storm-mode", "storm-active");
+		document.body.dataset.weather = "storm";
 		const scheduleLightning = (delay: number) => {
 			lightningTimer = window.setTimeout(() => {
-				if (stormTarget === 1 && !stormClosing) {
-					const baseIntensity = 0.72 + Math.random() * 0.28;
-					const pulseCount = 2 + Math.floor(Math.random() * 3);
-					let pulse = 0;
-					const flashPulse = () => {
-						const intensity = baseIntensity * (1 - pulse * 0.16) * (0.82 + Math.random() * 0.18);
-						lightningLevel = intensity;
-						if (pulse === 0) window.dispatchEvent(new CustomEvent("weather:lightning", { detail: { intensity: baseIntensity } }));
-						document.body.classList.add("lightning-flash");
-						window.setTimeout(() => {
-							lightningLevel = 0;
-							document.body.classList.remove("lightning-flash");
-							pulse += 1;
-							if (pulse < pulseCount && stormTarget === 1) window.setTimeout(flashPulse, 35 + Math.random() * 110);
-						}, 32 + Math.random() * 42);
-					};
-					flashPulse();
-					scheduleLightning(7_000 + Math.random() * 12_000);
+				if (stormTarget === 1) {
+					if (Math.random() < lightningChance) {
+						const baseIntensity = 0.68 + Math.random() * 0.32;
+						currentLightningPosition = [0.16 + Math.random() * 0.68, 0.16 + Math.random() * 0.68];
+						const pulseCount = 2 + Math.floor(Math.random() * 4);
+						let pulse = 0;
+						const flashPulse = () => {
+							const intensity = baseIntensity * (0.62 + Math.random() * 0.38) * (1 - pulse * (0.08 + Math.random() * 0.14));
+							lightningLevel = intensity;
+							if (pulse === 0) window.dispatchEvent(new CustomEvent("weather:lightning", { detail: { intensity: baseIntensity } }));
+							document.body.classList.add("lightning-flash");
+							window.setTimeout(() => {
+								lightningLevel = 0;
+								document.body.classList.remove("lightning-flash");
+								pulse += 1;
+								if (pulse < pulseCount && stormTarget === 1) window.setTimeout(flashPulse, 45 + Math.random() * 260);
+							}, 18 + Math.random() * 68);
+						};
+						flashPulse();
+					}
+					scheduleLightning(nextLightningDelay());
 				}
 			}, delay);
 		};
-		const scheduleStorm = (delay: number) => {
-			cycleTimer = window.setTimeout(() => {
-				if (!permanentStorm && Math.random() >= stormChance) return scheduleStorm(cycleDelay);
-				stormTransitionFrom = stormLevel;
-				stormTransitionStart = performance.now();
-				stormTarget = 1;
-				stormClosing = false;
-				document.body.classList.add("storm-mode");
-				document.body.dataset.weather = "storm";
-				scheduleLightning(4_000 + Math.random() * 5_000);
-				if (reducedMotion) document.body.classList.add("storm-active");
-				if (permanentStorm) return;
-				const duration = isDev ? 30_000 : 30_000 + Math.random() * 30_000;
-				stormEndTimer = window.setTimeout(() => {
-					stormClosing = true;
-					window.clearTimeout(lightningTimer);
-					stormEndTimer = window.setTimeout(() => {
-						stormTransitionFrom = stormLevel;
-						stormTransitionStart = performance.now();
-						stormTarget = 0;
-						document.body.classList.add("storm-draining");
-						document.body.classList.remove("lightning-flash");
-						document.body.dataset.weather = "clear";
-						window.setTimeout(() => {
-							document.body.classList.remove("storm-draining");
-							document.body.classList.remove("storm-mode");
-							scheduleStorm(cycleDelay);
-						}, weatherTransitionMs);
-					}, stormAudioTailMs);
-				}, duration);
-			}, delay);
-		};
-		scheduleStorm(permanentStorm ? 0 : cycleDelay);
+		if (!reducedMotion) scheduleLightning(12_000 + Math.random() * 18_000);
 
 		const render = (now: number) => {
 			const delta = Math.min((now - lastRender) / 1000, 0.05);
@@ -170,31 +149,22 @@ export default function BackgroundShader() {
 			}
 			gl.uniform2f(resolution, width, height);
 			gl.uniform1f(time, reducedMotion ? 0 : (now - started) / 1000);
-			if (reducedMotion) {
-				stormLevel = stormTarget;
-			} else {
-				const progress = Math.min(1, (now - stormTransitionStart) / weatherTransitionMs);
-				const eased = progress * progress * (3 - progress * 2);
-				stormLevel = stormTransitionFrom + (stormTarget - stormTransitionFrom) * eased;
-			}
 			lightningLevel *= Math.exp(-delta * 14);
 			if (Math.abs(stormLevel - lastAudioStormLevel) > 0.02) {
 				lastAudioStormLevel = stormLevel;
 				window.dispatchEvent(new CustomEvent("weather:intensity", { detail: { intensity: stormLevel } }));
 			}
-			document.body.classList.toggle("storm-active", stormLevel > 0.72);
 			gl.uniform1f(storm, stormLevel);
 			gl.uniform1f(lightning, lightningLevel);
+			gl.uniform2f(lightningPosition, currentLightningPosition[0], currentLightningPosition[1]);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			canvas.classList.add("shader-ready");
 			if (!reducedMotion) frame = requestAnimationFrame(render);
 		};
 		render(started);
 		return () => {
-			window.clearTimeout(cycleTimer);
-			window.clearTimeout(stormEndTimer);
 			window.clearTimeout(lightningTimer);
 			document.body.classList.remove("storm-mode");
-			document.body.classList.remove("storm-draining");
 			document.body.classList.remove("storm-active");
 			document.body.classList.remove("lightning-flash");
 			document.body.dataset.weather = "clear";

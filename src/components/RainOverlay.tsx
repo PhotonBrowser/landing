@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
+import { weatherConfig } from "../config/weather";
 
 type Drop = { x: number; y: number; vx: number; vy: number; length: number; depth: number; phase: number };
 type Splash = { x: number; y: number; age: number; vx: number; vy: number; life: number };
 type Collider = { left: number; right: number; top: number };
 type Cursor = { x: number; y: number } | null;
-
-const gravity = 680;
-const wind = 180;
 
 export default function RainOverlay() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,9 +14,11 @@ export default function RainOverlay() {
 		const host = canvas?.closest<HTMLElement>(".cloud-card");
 		const context = canvas?.getContext("2d");
 		if (!canvas || !host || !context) return;
+		const { rain } = weatherConfig;
 		const spawn = (height: number): Drop => {
-			const depth = Math.random();
-			return { x: Math.random(), y: -12 / height, vx: wind * (0.55 + depth * 0.9), vy: 330 + depth * 260, length: 8 + depth * 22, depth, phase: Math.random() * Math.PI * 2 };
+			const layer = Math.random();
+			const depth = layer < 0.3 ? 0.2 + Math.random() * 0.2 : layer < 0.78 ? 0.5 + Math.random() * 0.25 : 0.82 + Math.random() * 0.18;
+			return { x: Math.random(), y: -12 / height, vx: rain.wind * (0.4 + depth * 1.05), vy: rain.dropSpeed.minimum + depth * rain.dropSpeed.depthScale, length: rain.dropLength.minimum + depth * rain.dropLength.depthScale, depth, phase: Math.random() * Math.PI * 2 };
 		};
 		const drops: Drop[] = [];
 		const splashes: Splash[] = [];
@@ -27,7 +27,7 @@ export default function RainOverlay() {
 		let spawnTimer = 0;
 		let colliderTimer = 0;
 		let stormProgress = 0;
-		const maxDrops = 900;
+		const maxDrops = rain.maxDrops;
 		let colliders: Collider[] = [];
 		let cursor: Cursor = null;
 		let bounds = host.getBoundingClientRect();
@@ -95,8 +95,7 @@ export default function RainOverlay() {
 				layoutTimer = 0;
 			}
 			context.clearRect(0, 0, bounds.width, bounds.height);
-			const stormMode = document.body.classList.contains("storm-mode") && !document.body.classList.contains("storm-draining");
-			const draining = document.body.classList.contains("storm-draining");
+			const stormMode = document.body.classList.contains("storm-mode");
 			context.strokeStyle = "rgb(255 255 255 / 46%)";
 			context.lineWidth = 0.8;
 			colliderTimer += delta;
@@ -104,37 +103,26 @@ export default function RainOverlay() {
 				collectColliders();
 				colliderTimer = 0;
 			}
-			if (!stormMode && !draining) {
+			if (!stormMode) {
 				drops.length = 0;
 				splashes.length = 0;
 				spawnTimer = 0;
 				stormProgress = 0;
-			} else if (stormMode) {
-				stormProgress = Math.min(1, stormProgress + delta / 2.5);
+			} else {
+				stormProgress = Math.min(1, stormProgress + delta / rain.rampDuration);
 				spawnTimer += delta;
-				const spawnInterval = 0.04 - stormProgress * 0.028;
-				const targetDrops = Math.round(80 + (maxDrops - 80) * stormProgress);
+				const spawnInterval = rain.spawnInterval.light - stormProgress * (rain.spawnInterval.light - rain.spawnInterval.heavy);
+				const targetDrops = Math.round(140 + (maxDrops - 140) * stormProgress);
 				while (spawnTimer > spawnInterval && drops.length < targetDrops) {
 					drops.push(spawn(bounds.height));
 					spawnTimer -= spawnInterval;
 				}
-			} else {
-				spawnTimer = 0;
-				stormProgress = 0;
-				const sheen = context.createLinearGradient(0, bounds.height * 0.42, 0, bounds.height);
-				sheen.addColorStop(0, "rgb(255 255 255 / 0%)");
-				sheen.addColorStop(1, "rgb(210 235 255 / 16%)");
-				context.save();
-				context.globalCompositeOperation = "screen";
-				context.fillStyle = sheen;
-				context.fillRect(0, 0, bounds.width, bounds.height);
-				context.restore();
 			}
 
 			for (let index = drops.length - 1; index >= 0; index -= 1) {
 				const drop = drops[index];
 				const previousY = drop.y * bounds.height;
-				drop.vy += gravity * delta;
+					drop.vy += rain.gravity * delta;
 				const gust = Math.sin(now * 0.0007 + drop.phase) * 80 + Math.sin(now * 0.0017) * 35;
 				drop.x += ((drop.vx + gust * (0.35 + drop.depth)) * delta) / bounds.width;
 				drop.y += (drop.vy * delta) / bounds.height;
@@ -144,7 +132,8 @@ export default function RainOverlay() {
 				const hit = colliders.find((rect) => x >= rect.left && x <= rect.right && previousY < rect.top && nextY >= rect.top);
 				if (cursorHit || hit || nextY >= bounds.height) {
 					const impactY = cursorHit ? cursor.y : hit?.top ?? bounds.height;
-					for (let particle = 0; particle < 6; particle += 1) {
+					const splashCount = drop.depth > rain.foregroundDepth ? rain.foregroundSplashCount : rain.backgroundSplashCount;
+					for (let particle = 0; particle < splashCount; particle += 1) {
 						splashes.push({ x, y: impactY, age: 0, vx: (Math.random() - 0.5) * 90, vy: -75 - Math.random() * 75, life: 0.18 + Math.random() * 0.16 });
 					}
 					drops.splice(index, 1);
@@ -155,8 +144,9 @@ export default function RainOverlay() {
 					continue;
 				}
 				const speed = Math.hypot(drop.vx, drop.vy);
-				context.globalAlpha = 0.2 + drop.depth * 0.55;
+				context.globalAlpha = rain.dropOpacity.minimum + drop.depth * rain.dropOpacity.depthScale;
 				context.lineWidth = 0.45 + drop.depth * 0.9;
+				context.strokeStyle = drop.depth < 0.45 ? "rgb(150 187 214 / 42%)" : drop.depth < 0.78 ? "rgb(188 216 236 / 52%)" : "rgb(220 237 248 / 64%)";
 				context.beginPath();
 				context.moveTo(x, nextY);
 				context.lineTo(x - (drop.vx / speed) * drop.length, nextY - (drop.vy / speed) * drop.length);
@@ -172,13 +162,13 @@ export default function RainOverlay() {
 					splashes.splice(index, 1);
 					continue;
 				}
-				splash.vy += gravity * delta;
+				splash.vy += rain.gravity * delta;
 				splash.x += splash.vx * delta;
 				splash.y += splash.vy * delta;
 				context.globalAlpha = 1 - splash.age / splash.life;
 				context.beginPath();
 				context.arc(splash.x, splash.y, 1.2, 0, Math.PI * 2);
-				context.fillStyle = "rgb(255 255 255 / 72%)";
+				context.fillStyle = "rgb(210 232 246 / 56%)";
 				context.fill();
 			}
 			context.globalAlpha = 1;

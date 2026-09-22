@@ -69,9 +69,16 @@ export default function WaitlistButton() {
 						transition={{ duration: 0.14 }}
 					>
 						<input ref={inputRef} name="email" type="email" placeholder="Your email" autoComplete="email" required />
-						<button className="waitlist-submit" type="submit" aria-label="Join waitlist">
+						<motion.button
+							className="waitlist-submit"
+							type="submit"
+							aria-label="Join waitlist"
+							whileTap={{ scale: 0.97 }}
+							transformTemplate={(transform) => `${transform} translateZ(0)`}
+							transition={{ type: "spring", stiffness: 420, damping: 46, mass: 0.8 }}
+						>
 							<Check size={16} aria-hidden="true" />
-						</button>
+						</motion.button>
 					</motion.div>
 				)}
 

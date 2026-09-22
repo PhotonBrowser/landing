@@ -16,15 +16,8 @@
 	--border-card: rgb(0 0 0 / 6%);
 	--shadow-card: 0 2px 12px rgb(0 0 0 / 06%);
 	--shadow-pill: 0 5px 16px rgb(0 0 0 / 10%);
-	--weather-transition-duration: 2.5s;
-	--weather-transition:
-		color var(--weather-transition-duration) linear,
-		background-color var(--weather-transition-duration) linear,
-		border-color var(--weather-transition-duration) linear,
-		box-shadow var(--weather-transition-duration) linear;
 	color-scheme: light;
 	background: var(--surface-page);
-	transition: var(--weather-transition);
 }
 
 *,
@@ -50,14 +43,27 @@ body {
 
 html {
 	background: var(--surface-page);
-	transition: var(--weather-transition);
 }
 
 body {
 	min-height: 100dvh;
 	padding: 16px;
 	background: var(--surface-page);
-	transition: var(--weather-transition);
+}
+
+body::after {
+	position: fixed;
+	inset: 0;
+	z-index: 10;
+	content: "";
+	pointer-events: none;
+	background: rgb(235 245 255 / 100%);
+	mix-blend-mode: screen;
+	opacity: 0;
+}
+
+body.lightning-flash::after {
+	opacity: 0.055;
 }
 
 .page {
@@ -76,7 +82,6 @@ body {
 	box-shadow: var(--shadow-card);
 	background: var(--surface-card);
 	overflow: hidden;
-	transition: var(--weather-transition);
 }
 
 .background-shader {
@@ -84,6 +89,11 @@ body {
 	inset: 0;
 	width: 100%;
 	height: 100%;
+	visibility: hidden;
+}
+
+.background-shader.shader-ready {
+	visibility: visible;
 }
 
 .rain-overlay {
@@ -94,19 +104,15 @@ body {
 	height: 100%;
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity var(--weather-transition-duration) linear;
+	transition: none;
 }
 
 .storm-mode .rain-overlay {
 	opacity: 0.8;
 }
 
-.storm-draining .rain-overlay {
-	opacity: 0;
-}
-
 .lightning-flash .cloud-card {
-	filter: brightness(1.08) contrast(1.04);
+	filter: brightness(1.045) contrast(1.02);
 }
 
 .site-nav {
@@ -116,10 +122,10 @@ body {
 	left: 0;
 	right: 0;
 	display: grid;
-	grid-template-columns: 1fr auto 1fr;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 	align-items: center;
-	gap: 1rem;
-	padding: clamp(0.8rem, 1.8vw, 1.2rem) clamp(0.75rem, 2vw, 1.75rem);
+	min-height: 4rem;
+	padding-inline: clamp(0.75rem, 2vw, 1.75rem);
 	color: var(--text-primary);
 	pointer-events: auto;
 }
@@ -131,10 +137,12 @@ body {
 .site-nav > * {
 	position: relative;
 	z-index: 1;
+	min-width: 0;
 	pointer-events: auto;
 }
 
 .brand {
+	justify-self: start;
 	display: flex;
 	align-items: center;
 	gap: 0.4rem;
@@ -143,7 +151,7 @@ body {
 	font-weight: 500;
 	letter-spacing: -0.03em;
 	text-decoration: none;
-	transition: var(--weather-transition);
+	transition: none;
 }
 
 .logo {
@@ -152,6 +160,7 @@ body {
 }
 
 .nav-links {
+	justify-self: center;
 	display: flex;
 	align-items: center;
 	gap: clamp(1rem, 2.2vw, 2rem);
@@ -163,7 +172,7 @@ body {
 .nav-cta {
 	color: inherit;
 	text-decoration: none;
-	transition: var(--weather-transition), opacity 180ms ease, transform 180ms ease;
+	transition: opacity 180ms ease;
 }
 
 .nav-links a { opacity: 0.78; }
@@ -182,12 +191,11 @@ body {
 	font: inherit;
 	font-size: 0.76rem;
 	cursor: pointer;
-	transition: var(--weather-transition), opacity 180ms ease, transform 180ms ease;
+	transition: opacity 180ms ease;
 }
 
 .audio-toggle:hover {
 	background: var(--surface-panel);
-	transform: translateY(-1px);
 }
 
 .nav-cta {
@@ -197,12 +205,11 @@ body {
 	background: var(--surface-cta);
 	color: var(--text-on-accent);
 	font-size: 0.76rem;
-	transition: var(--weather-transition), opacity 180ms ease, transform 180ms ease;
+	transition: opacity 180ms ease;
 }
 
 .nav-cta:hover {
 	background: var(--surface-cta-hover);
-	transform: translateY(-1px);
 }
 
 .storm-mode {
@@ -239,13 +246,16 @@ body {
 	align-items: center;
 	justify-content: center;
 	gap: 1.4rem;
-	padding: 5rem 1rem 1rem;
+	padding-inline: 1rem;
 	color: var(--text-primary);
 	text-align: center;
-	transition: var(--weather-transition);
 }
 
-#waitlist { display: flex; }
+#waitlist {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+}
 
 .badge {
 	display: inline-flex;
@@ -255,7 +265,6 @@ body {
 	border: 1px solid var(--outline);
 	border-radius: 999px;
 	font-size: 0.75rem;
-	transition: var(--weather-transition);
 }
 
 .badge svg,
@@ -297,13 +306,22 @@ h1 {
 	transform: translateZ(0);
 	backface-visibility: hidden;
 	will-change: transform;
-	transition: var(--weather-transition), transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .button,
 .waitlist-submit {
 	border: 0;
 	font: inherit;
+}
+
+.button,
+.audio-toggle,
+.waitlist-submit,
+.nav-cta {
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-font-smoothing: antialiased;
 }
 
 .button:active {
@@ -347,7 +365,7 @@ h1 {
 	padding: 0;
 	background: var(--surface-panel);
 	box-shadow: var(--shadow-pill);
-	transition: var(--weather-transition);
+	transition: none;
 }
 
 .waitlist-form > div,
@@ -382,7 +400,7 @@ h1 {
 	background: transparent;
 	color: var(--text-primary);
 	font: inherit;
-	transition: color var(--weather-transition-duration) linear;
+	transition: none;
 }
 
 .waitlist-form input::placeholder {
@@ -398,7 +416,7 @@ h1 {
 	background: var(--accent);
 	color: var(--accent-text);
 	cursor: pointer;
-	transition: var(--weather-transition);
+	transition: none;
 }
 
 .waitlist-success {
@@ -410,7 +428,7 @@ h1 {
 	color: var(--accent-text);
 	font-size: 0.95rem;
 	white-space: nowrap;
-	transition: var(--weather-transition);
+	transition: none;
 }
 
 .waitlist-loading {
@@ -419,7 +437,7 @@ h1 {
 	justify-content: center;
 	background: var(--surface-panel);
 	box-shadow: var(--shadow-pill);
-	transition: var(--weather-transition);
+	transition: none;
 }
 
 .waitlist-loader {
@@ -462,8 +480,10 @@ h1 {
 
 @media (prefers-reduced-motion: reduce) {
 	.button,
+	.audio-toggle,
 	.nav-links a,
-	.nav-cta {
+	.nav-cta,
+	.waitlist-submit {
 		transition: none;
 	}
 
@@ -483,5 +503,4 @@ h1 {
 	}
 	.nav-links { display: none; }
 	.nav-cta { font-size: 0.75rem; }
-	.hero-content { padding-top: 5.5rem; }
 }

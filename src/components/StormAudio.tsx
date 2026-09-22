@@ -1,14 +1,20 @@
 import { Volume2, VolumeX } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 	const rainSource = "/audio/light-rain-loop.wav";
-	const thunderSources = [
+const thunderSources = [
 	"/audio/rain-thunder-storm.mp3",
 	"/audio/thunder-distant.mp3",
 	"/audio/thunder-big-rumble.mp3",
+	"/audio/thunder-rain-storm.mp3",
+	"/audio/thunder-storm-rumble.mp3",
+	"/audio/thunder-forest-storm.mp3",
+	"/audio/thunderstorm-background.mp3",
+	"/audio/storm-rumble-starting.mp3",
 ];
 
-const isRaining = () => document.body.classList.contains("storm-mode") && !document.body.classList.contains("storm-draining");
+const isRaining = () => document.body.classList.contains("storm-mode");
 
 export default function StormAudio() {
 	const rainContextRef = useRef<AudioContext | null>(null);
@@ -17,6 +23,7 @@ export default function StormAudio() {
 	const rainStartRef = useRef<Promise<void> | null>(null);
 	const thunderTimersRef = useRef(new Set<number>());
 	const thunderPlayersRef = useRef(new Set<HTMLAudioElement>());
+	const lastThunderIndexRef = useRef(-1);
 	const enabledRef = useRef(false);
 	const [enabled, setEnabled] = useState(false);
 
@@ -93,7 +100,12 @@ export default function StormAudio() {
 			const intensity = (event as CustomEvent<{ intensity: number }>).detail.intensity;
 			const timer = window.setTimeout(() => {
 				thunderTimersRef.current.delete(timer);
-				const player = new Audio(thunderSources[Math.floor(Math.random() * thunderSources.length)]);
+				let sourceIndex = Math.floor(Math.random() * thunderSources.length);
+				while (thunderSources.length > 1 && sourceIndex === lastThunderIndexRef.current) {
+					sourceIndex = Math.floor(Math.random() * thunderSources.length);
+				}
+				lastThunderIndexRef.current = sourceIndex;
+				const player = new Audio(thunderSources[sourceIndex]);
 				const peakVolume = 0.07 + intensity * 0.09;
 				player.volume = peakVolume;
 				player.playbackRate = 0.96 + Math.random() * 0.08;
@@ -110,7 +122,7 @@ export default function StormAudio() {
 					}
 				};
 				requestAnimationFrame(fade);
-			}, 550 + Math.random() * 450);
+			}, 280 + Math.random() * 620);
 			thunderTimersRef.current.add(timer);
 		};
 		const observer = new MutationObserver(syncRain);
@@ -140,9 +152,18 @@ export default function StormAudio() {
 	};
 
 	return (
-		<button className="audio-toggle" type="button" aria-label="Toggle storm sounds" aria-pressed={enabled} onClick={toggle}>
+		<motion.button
+			className="audio-toggle"
+			type="button"
+			aria-label="Toggle storm sounds"
+			aria-pressed={enabled}
+			onClick={toggle}
+			whileTap={{ scale: 0.97 }}
+			transformTemplate={(transform) => `${transform} translateZ(0)`}
+			transition={{ type: "spring", stiffness: 420, damping: 46, mass: 0.8 }}
+		>
 			{enabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
 			<span>{enabled ? "Sound on" : "Sound off"}</span>
-		</button>
+		</motion.button>
 	);
 }
