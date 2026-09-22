@@ -1,0 +1,45 @@
+<script>
+	let audioContext: AudioContext | undefined;
+	let noiseBuffer: AudioBuffer | undefined;
+
+	function getNoiseBuffer(context: AudioContext) {
+		if (noiseBuffer) return noiseBuffer;
+
+		const duration = 0.002;
+		const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+		const samples = buffer.getChannelData(0);
+
+		for (let i = 0; i < samples.length; i++) {
+			samples[i] = (Math.random() * 2 - 1) * Math.exp(-i / 8);
+		}
+
+		noiseBuffer = buffer;
+		return buffer;
+	}
+
+	document.addEventListener("click", (event) => {
+		try {
+			audioContext ??= new AudioContext();
+			const context = audioContext;
+			if (context.state === "suspended") void context.resume();
+
+			const source = context.createBufferSource();
+			const filter = context.createBiquadFilter();
+			const gain = context.createGain();
+			const now = context.currentTime;
+
+			source.buffer = getNoiseBuffer(context);
+			filter.type = "bandpass";
+			filter.frequency.value = 3_000 + Math.random() * 3_000;
+			filter.Q.value = 10;
+			gain.gain.setValueAtTime(0.2, now);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.002);
+
+			source.connect(filter).connect(gain).connect(context.destination);
+			source.start(now);
+			source.stop(now + 0.002);
+		} catch {
+			// Sound is optional; keep the control usable if Web Audio is unavailable.
+		}
+	}, true);
+</script>
