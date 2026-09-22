@@ -2,7 +2,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-	const rainSource = "/audio/light-rain-loop.wav";
+const rainSource = "/audio/light-rain-loop.mp3";
 const thunderSources = [
 	"/audio/rain-thunder-storm.mp3",
 	"/audio/thunder-distant.mp3",
@@ -21,9 +21,11 @@ export default function StormAudio() {
 	const rainContextRef = useRef<AudioContext | null>(null);
 	const rainSourceRef = useRef<AudioBufferSourceNode | null>(null);
 	const rainGainRef = useRef<GainNode | null>(null);
+	const rainBufferRef = useRef<AudioBuffer | null>(null);
 	const rainStartRef = useRef<Promise<void> | null>(null);
 	const thunderTimersRef = useRef(new Set<number>());
 	const thunderPlayersRef = useRef(new Set<HTMLAudioElement>());
+	const thunderCleanupRef = useRef(new Map<HTMLAudioElement, () => void>());
 	const lastThunderIndexRef = useRef(-1);
 	const enabledRef = useRef(false);
 	const [enabled, setEnabled] = useState(false);
@@ -44,8 +46,12 @@ export default function StormAudio() {
 			const context = rainContextRef.current ?? new AudioContext();
 			rainContextRef.current = context;
 			void context.resume();
-			const response = await fetch(rainSource);
-			const buffer = await context.decodeAudioData(await response.arrayBuffer());
+			let buffer = rainBufferRef.current;
+			if (!buffer) {
+				const response = await fetch(rainSource);
+				buffer = await context.decodeAudioData(await response.arrayBuffer());
+				rainBufferRef.current = buffer;
+			}
 			if (!enabledRef.current || !isRaining()) return;
 			const source = context.createBufferSource();
 			const gain = context.createGain();
@@ -111,10 +117,13 @@ export default function StormAudio() {
 				player.volume = peakVolume;
 				player.playbackRate = 0.96 + Math.random() * 0.08;
 				thunderPlayersRef.current.add(player);
+				let startFadeNearEnd = () => {};
 				const cleanup = () => {
 					player.pause();
 					player.removeEventListener("ended", cleanup);
+					player.removeEventListener("timeupdate", startFadeNearEnd);
 					thunderPlayersRef.current.delete(player);
+					thunderCleanupRef.current.delete(player);
 				};
 				player.addEventListener("ended", cleanup);
 				void player.play().catch(cleanup);
@@ -133,11 +142,28 @@ export default function StormAudio() {
 					}
 					requestAnimationFrame(fade);
 				};
-				requestAnimationFrame(fade);
+				startFadeNearEnd = () => {
+					if (fadeStartedAt !== null || !Number.isFinite(player.duration)) return;
+					const remaining = (player.duration - player.currentTime) / player.playbackRate;
+					if (remaining <= thunderFadeDuration / 1000) {
+						fadeStartedAt = performance.now();
+						player.removeEventListener("timeupdate", startFadeNearEnd);
+						requestAnimationFrame(fade);
+					}
+				};
+				thunderCleanupRef.current.set(player, cleanup);
+				player.addEventListener("timeupdate", startFadeNearEnd);
+				startFadeNearEnd();
 			}, 280 + Math.random() * 620);
 			thunderTimersRef.current.add(timer);
 		};
-		const observer = new MutationObserver(syncRain);
+		let wasRaining = isRaining();
+		const observer = new MutationObserver(() => {
+			const raining = isRaining();
+			if (raining === wasRaining) return;
+			wasRaining = raining;
+			void syncRain();
+		});
 		observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 		window.addEventListener("weather:lightning", onLightning);
 		window.addEventListener("weather:intensity", onIntensity);
@@ -158,8 +184,7 @@ export default function StormAudio() {
 			thunderTimersRef.current.forEach((timer) => window.clearTimeout(timer));
 			thunderTimersRef.current.clear();
 			fadeRain(0, 900, true);
-			thunderPlayersRef.current.forEach((player) => player.pause());
-			thunderPlayersRef.current.clear();
+			thunderCleanupRef.current.forEach((cleanup) => cleanup());
 		}
 	};
 

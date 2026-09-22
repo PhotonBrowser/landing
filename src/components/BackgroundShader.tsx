@@ -21,13 +21,14 @@ float noise(vec2 p) {
 
 float fbm(vec2 p) {
   float value = 0.0, amplitude = 0.5;
-  for (int i = 0; i < 4; i++) { value += amplitude * noise(p); p *= 2.0; amplitude *= 0.5; }
+  for (int i = 0; i < 3; i++) { value += amplitude * noise(p); p *= 2.0; amplitude *= 0.5; }
   return value;
 }
 
 void main() {
   vec2 uv = gl_FragCoord.xy / resolution;
-  vec2 p = uv * vec2(2.4, 1.7);
+  // Keep cloud features the same size in both axes as the canvas aspect changes.
+  vec2 p = uv * vec2((resolution.x / resolution.y) * 1.7, 1.7);
   vec2 slowSpace = p * 0.72 + vec2(time * 0.018, time * 0.006);
   vec2 fastSpace = p * 1.28 + vec2(-time * 0.028, time * 0.012);
   vec2 deepSpace = p * 0.44 + vec2(-time * 0.006, time * 0.003);
@@ -100,6 +101,8 @@ export default function BackgroundShader() {
 		let lightningTimer = 0;
 		let lastRender = started;
 		let lastAudioStormLevel = -1;
+		let performanceFrames = 0;
+		let lastPerformanceReport = started;
 		let currentLightningPosition: [number, number] = [0.5, 0.5];
 		const stormLevel = 1;
 		const stormTarget = 1;
@@ -137,11 +140,19 @@ export default function BackgroundShader() {
 		if (!reducedMotion) scheduleLightning(12_000 + Math.random() * 18_000);
 
 		const render = (now: number) => {
+			if (document.hidden) {
+				frame = 0;
+				return;
+			}
+			if (now - lastRender < 1000 / 60) {
+				frame = requestAnimationFrame(render);
+				return;
+			}
 			const delta = Math.min((now - lastRender) / 1000, 0.05);
 			lastRender = now;
-			const dpr = Math.min(window.devicePixelRatio, 2);
-			const width = canvas.clientWidth * dpr;
-			const height = canvas.clientHeight * dpr;
+			const dpr = Math.min(window.devicePixelRatio, 1);
+			const width = Math.round(canvas.clientWidth * dpr);
+			const height = Math.round(canvas.clientHeight * dpr);
 			if (canvas.width !== width || canvas.height !== height) {
 				canvas.width = width;
 				canvas.height = height;
@@ -159,10 +170,39 @@ export default function BackgroundShader() {
 			gl.uniform2f(lightningPosition, currentLightningPosition[0], currentLightningPosition[1]);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			canvas.classList.add("shader-ready");
+			if (import.meta.env.DEV) {
+				performanceFrames += 1;
+				if (now - lastPerformanceReport >= 1_000) {
+					window.dispatchEvent(new CustomEvent("page:shader-performance", {
+						detail: {
+							fps: Math.round((performanceFrames * 1_000) / (now - lastPerformanceReport)),
+							width,
+							height,
+						},
+					}));
+					performanceFrames = 0;
+					lastPerformanceReport = now;
+				}
+			}
 			if (!reducedMotion) frame = requestAnimationFrame(render);
 		};
+		const onVisibilityChange = () => {
+			if (document.hidden) {
+				cancelAnimationFrame(frame);
+				frame = 0;
+				return;
+			}
+			if (!reducedMotion && !frame) {
+				lastRender = performance.now();
+				lastPerformanceReport = lastRender;
+				performanceFrames = 0;
+				frame = requestAnimationFrame(render);
+			}
+		};
+		document.addEventListener("visibilitychange", onVisibilityChange);
 		render(started);
 		return () => {
+			document.removeEventListener("visibilitychange", onVisibilityChange);
 			window.clearTimeout(lightningTimer);
 			document.body.classList.remove("storm-mode");
 			document.body.classList.remove("storm-active");
