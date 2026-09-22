@@ -101,9 +101,13 @@ body {
 	opacity: 0.8;
 }
 
+.lightning-flash .cloud-card {
+	filter: brightness(1.08) contrast(1.04);
+}
+
 .site-nav {
 	position: absolute;
-	z-index: 1;
+	z-index: 3;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -113,6 +117,17 @@ body {
 	gap: 1rem;
 	padding: clamp(0.8rem, 1.8vw, 1.2rem) clamp(0.75rem, 2vw, 1.75rem);
 	color: var(--text-primary);
+	pointer-events: auto;
+}
+
+.storm-audio-source {
+	display: none;
+}
+
+.site-nav > * {
+	position: relative;
+	z-index: 1;
+	pointer-events: auto;
 }
 
 .brand {
@@ -149,6 +164,27 @@ body {
 
 .nav-links a { opacity: 0.78; }
 .nav-links a:hover { opacity: 1; transform: translateY(-1px); }
+
+.audio-toggle {
+	justify-self: end;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.52rem 0.8rem;
+	border: 1px solid var(--outline);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: 0.76rem;
+	cursor: pointer;
+	transition: var(--weather-transition), opacity 180ms ease, transform 180ms ease;
+}
+
+.audio-toggle:hover {
+	background: var(--surface-panel);
+	transform: translateY(-1px);
+}
 
 .nav-cta {
 	justify-self: end;

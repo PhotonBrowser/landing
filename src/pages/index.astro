@@ -3,6 +3,7 @@ import "../styles/global.css";
 import { ChevronRight } from "lucide-react";
 import BackgroundShader from "../components/BackgroundShader";
 import RainOverlay from "../components/RainOverlay";
+import StormAudio from "../components/StormAudio";
 import WaitlistButton from "../components/WaitlistButton";
 ---
 
@@ -30,6 +31,7 @@ import WaitlistButton from "../components/WaitlistButton";
 						<a href="#roadmap">Roadmap</a>
 						<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
 					</div>
+					<StormAudio client:load />
 				</nav>
 				<div class="hero-content">
 					<div class="badge">Built on Ladybird <ChevronRight size={13} aria-hidden="true" /></div>

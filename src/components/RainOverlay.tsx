@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 
-type Drop = { x: number; y: number; vx: number; vy: number; length: number };
+type Drop = { x: number; y: number; vx: number; vy: number; length: number; depth: number; phase: number };
 type Splash = { x: number; y: number; age: number; vx: number; vy: number; life: number };
 type Collider = { left: number; right: number; top: number };
 
 const gravity = 680;
-const wind = 240;
+const wind = 180;
 
 export default function RainOverlay() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,7 +15,10 @@ export default function RainOverlay() {
 		const host = canvas?.closest<HTMLElement>(".cloud-card");
 		const context = canvas?.getContext("2d");
 		if (!canvas || !host || !context) return;
-		const spawn = (height: number): Drop => ({ x: Math.random(), y: -12 / height, vx: wind * (0.85 + Math.random() * 0.3), vy: 360 + Math.random() * 220, length: 12 + Math.random() * 14 });
+		const spawn = (height: number): Drop => {
+			const depth = Math.random();
+			return { x: Math.random(), y: -12 / height, vx: wind * (0.55 + depth * 0.9), vy: 330 + depth * 260, length: 8 + depth * 22, depth, phase: Math.random() * Math.PI * 2 };
+		};
 		const drops: Drop[] = [];
 		const splashes: Splash[] = [];
 		let frame = 0;
@@ -102,13 +105,22 @@ export default function RainOverlay() {
 					drops.push(spawn(bounds.height));
 					spawnTimer -= spawnInterval;
 				}
+				const sheen = context.createLinearGradient(0, bounds.height * 0.42, 0, bounds.height);
+				sheen.addColorStop(0, "rgb(255 255 255 / 0%)");
+				sheen.addColorStop(1, "rgb(210 235 255 / 16%)");
+				context.save();
+				context.globalCompositeOperation = "screen";
+				context.fillStyle = sheen;
+				context.fillRect(0, 0, bounds.width, bounds.height);
+				context.restore();
 			}
 
 			for (let index = drops.length - 1; index >= 0; index -= 1) {
 				const drop = drops[index];
 				const previousY = drop.y * bounds.height;
 				drop.vy += gravity * delta;
-				drop.x += (drop.vx * delta) / bounds.width;
+				const gust = Math.sin(now * 0.0007 + drop.phase) * 80 + Math.sin(now * 0.0017) * 35;
+				drop.x += ((drop.vx + gust * (0.35 + drop.depth)) * delta) / bounds.width;
 				drop.y += (drop.vy * delta) / bounds.height;
 				const nextY = drop.y * bounds.height;
 				const x = drop.x * bounds.width;
@@ -126,12 +138,15 @@ export default function RainOverlay() {
 					continue;
 				}
 				const speed = Math.hypot(drop.vx, drop.vy);
+				context.globalAlpha = 0.2 + drop.depth * 0.55;
+				context.lineWidth = 0.45 + drop.depth * 0.9;
 				context.beginPath();
 				context.moveTo(x, nextY);
 				context.lineTo(x - (drop.vx / speed) * drop.length, nextY - (drop.vy / speed) * drop.length);
 				context.stroke();
 			}
 
+			context.globalAlpha = 1;
 			context.strokeStyle = "rgb(255 255 255 / 64%)";
 			for (let index = splashes.length - 1; index >= 0; index -= 1) {
 				const splash = splashes[index];
