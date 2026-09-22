@@ -15,6 +15,9 @@ export default function RainOverlay() {
 		const context = canvas?.getContext("2d");
 		if (!canvas || !host || !context) return;
 		const { rain } = weatherConfig;
+		const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+		const lowEnd = (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || navigator.hardwareConcurrency <= 4 || nav.connection?.saveData === true;
+		const particleScale = lowEnd ? 0.5 : 1;
 		const spawn = (height: number): Drop => {
 			const layer = Math.random();
 			const depth = layer < 0.3 ? 0.2 + Math.random() * 0.2 : layer < 0.78 ? 0.5 + Math.random() * 0.25 : 0.82 + Math.random() * 0.18;
@@ -27,7 +30,7 @@ export default function RainOverlay() {
 		let spawnTimer = 0;
 		let colliderTimer = 0;
 		let stormProgress = 0;
-		const maxDrops = rain.maxDrops;
+		const maxDrops = Math.round(rain.maxDrops * particleScale);
 		let colliders: Collider[] = [];
 		let cursor: Cursor = null;
 		let bounds = host.getBoundingClientRect();
@@ -84,7 +87,7 @@ export default function RainOverlay() {
 			layoutTimer += delta;
 			if (layoutTimer > 0.1) {
 				bounds = host.getBoundingClientRect();
-				const dpr = Math.min(window.devicePixelRatio, 2);
+				const dpr = Math.min(window.devicePixelRatio, lowEnd ? 1 : 2);
 				const width = Math.round(bounds.width * dpr);
 				const height = Math.round(bounds.height * dpr);
 				if (canvas.width !== width || canvas.height !== height) {
@@ -112,7 +115,7 @@ export default function RainOverlay() {
 				stormProgress = Math.min(1, stormProgress + delta / rain.rampDuration);
 				spawnTimer += delta;
 				const spawnInterval = rain.spawnInterval.light - stormProgress * (rain.spawnInterval.light - rain.spawnInterval.heavy);
-				const targetDrops = Math.round(140 + (maxDrops - 140) * stormProgress);
+				const targetDrops = Math.round((140 + (rain.maxDrops - 140) * stormProgress) * particleScale);
 				while (spawnTimer > spawnInterval && drops.length < targetDrops) {
 					drops.push(spawn(bounds.height));
 					spawnTimer -= spawnInterval;
@@ -132,7 +135,7 @@ export default function RainOverlay() {
 				const hit = colliders.find((rect) => x >= rect.left && x <= rect.right && previousY < rect.top && nextY >= rect.top);
 				if (cursorHit || hit || nextY >= bounds.height) {
 					const impactY = cursorHit ? cursor.y : hit?.top ?? bounds.height;
-					const splashCount = drop.depth > rain.foregroundDepth ? rain.foregroundSplashCount : rain.backgroundSplashCount;
+					const splashCount = Math.round((drop.depth > rain.foregroundDepth ? rain.foregroundSplashCount : rain.backgroundSplashCount) * particleScale);
 					for (let particle = 0; particle < splashCount; particle += 1) {
 						splashes.push({ x, y: impactY, age: 0, vx: (Math.random() - 0.5) * 90, vy: -75 - Math.random() * 75, life: 0.18 + Math.random() * 0.16 });
 					}
