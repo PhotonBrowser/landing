@@ -13,6 +13,7 @@ const thunderSources = [
 	"/audio/thunderstorm-background.mp3",
 	"/audio/storm-rumble-starting.mp3",
 ];
+const thunderFadeDuration = 3_000;
 
 const isRaining = () => document.body.classList.contains("storm-mode");
 
@@ -110,16 +111,27 @@ export default function StormAudio() {
 				player.volume = peakVolume;
 				player.playbackRate = 0.96 + Math.random() * 0.08;
 				thunderPlayersRef.current.add(player);
-				void player.play();
-				const started = performance.now();
+				const cleanup = () => {
+					player.pause();
+					player.removeEventListener("ended", cleanup);
+					thunderPlayersRef.current.delete(player);
+				};
+				player.addEventListener("ended", cleanup);
+				void player.play().catch(cleanup);
+				let fadeStartedAt: number | null = null;
 				const fade = (now: number) => {
-					const progress = Math.min(1, (now - started) / 5_500);
-					player.volume = peakVolume * (1 - progress);
-					if (progress < 1) requestAnimationFrame(fade);
-					else {
-						player.pause();
-						thunderPlayersRef.current.delete(player);
+					if (!thunderPlayersRef.current.has(player)) return;
+					if (Number.isFinite(player.duration)) {
+						const remaining = (player.duration - player.currentTime) / player.playbackRate;
+						if (fadeStartedAt === null && remaining <= thunderFadeDuration / 1000) {
+							fadeStartedAt = now;
+						}
+						if (fadeStartedAt !== null) {
+							const progress = Math.min(1, (now - fadeStartedAt) / thunderFadeDuration);
+							player.volume = peakVolume * (1 - progress);
+						}
 					}
+					requestAnimationFrame(fade);
 				};
 				requestAnimationFrame(fade);
 			}, 280 + Math.random() * 620);
