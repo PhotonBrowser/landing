@@ -101,6 +101,10 @@ body {
 	opacity: 0.8;
 }
 
+.storm-draining .rain-overlay {
+	opacity: 0;
+}
+
 .lightning-flash .cloud-card {
 	filter: brightness(1.08) contrast(1.04);
 }

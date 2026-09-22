@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 type Drop = { x: number; y: number; vx: number; vy: number; length: number; depth: number; phase: number };
 type Splash = { x: number; y: number; age: number; vx: number; vy: number; life: number };
 type Collider = { left: number; right: number; top: number };
+type Cursor = { x: number; y: number } | null;
 
 const gravity = 680;
 const wind = 180;
@@ -28,8 +29,19 @@ export default function RainOverlay() {
 		let stormProgress = 0;
 		const maxDrops = 900;
 		let colliders: Collider[] = [];
+		let cursor: Cursor = null;
 		let bounds = host.getBoundingClientRect();
 		let layoutTimer = 1;
+
+		const updateCursor = (event: PointerEvent) => {
+			const rect = host.getBoundingClientRect();
+			cursor = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+		};
+		const clearCursor = () => {
+			cursor = null;
+		};
+		host.addEventListener("pointermove", updateCursor);
+		host.addEventListener("pointerleave", clearCursor);
 
 		const collectColliders = () => {
 			const next: Collider[] = [];
@@ -83,7 +95,8 @@ export default function RainOverlay() {
 				layoutTimer = 0;
 			}
 			context.clearRect(0, 0, bounds.width, bounds.height);
-			const stormMode = document.body.classList.contains("storm-mode");
+			const stormMode = document.body.classList.contains("storm-mode") && !document.body.classList.contains("storm-draining");
+			const draining = document.body.classList.contains("storm-draining");
 			context.strokeStyle = "rgb(255 255 255 / 46%)";
 			context.lineWidth = 0.8;
 			colliderTimer += delta;
@@ -91,12 +104,12 @@ export default function RainOverlay() {
 				collectColliders();
 				colliderTimer = 0;
 			}
-			if (!stormMode) {
+			if (!stormMode && !draining) {
 				drops.length = 0;
 				splashes.length = 0;
 				spawnTimer = 0;
 				stormProgress = 0;
-			} else {
+			} else if (stormMode) {
 				stormProgress = Math.min(1, stormProgress + delta / 2.5);
 				spawnTimer += delta;
 				const spawnInterval = 0.04 - stormProgress * 0.028;
@@ -105,6 +118,9 @@ export default function RainOverlay() {
 					drops.push(spawn(bounds.height));
 					spawnTimer -= spawnInterval;
 				}
+			} else {
+				spawnTimer = 0;
+				stormProgress = 0;
 				const sheen = context.createLinearGradient(0, bounds.height * 0.42, 0, bounds.height);
 				sheen.addColorStop(0, "rgb(255 255 255 / 0%)");
 				sheen.addColorStop(1, "rgb(210 235 255 / 16%)");
@@ -124,9 +140,10 @@ export default function RainOverlay() {
 				drop.y += (drop.vy * delta) / bounds.height;
 				const nextY = drop.y * bounds.height;
 				const x = drop.x * bounds.width;
+				const cursorHit = cursor && Math.abs(x - cursor.x) < 14 && previousY < cursor.y && nextY >= cursor.y;
 				const hit = colliders.find((rect) => x >= rect.left && x <= rect.right && previousY < rect.top && nextY >= rect.top);
-				if (hit || nextY >= bounds.height) {
-					const impactY = hit?.top ?? bounds.height;
+				if (cursorHit || hit || nextY >= bounds.height) {
+					const impactY = cursorHit ? cursor.y : hit?.top ?? bounds.height;
 					for (let particle = 0; particle < 6; particle += 1) {
 						splashes.push({ x, y: impactY, age: 0, vx: (Math.random() - 0.5) * 90, vy: -75 - Math.random() * 75, life: 0.18 + Math.random() * 0.16 });
 					}
@@ -169,7 +186,11 @@ export default function RainOverlay() {
 		};
 
 		frame = requestAnimationFrame(draw);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			host.removeEventListener("pointermove", updateCursor);
+			host.removeEventListener("pointerleave", clearCursor);
+			cancelAnimationFrame(frame);
+		};
 	}, []);
 
 	return <canvas ref={canvasRef} className="rain-overlay" aria-hidden="true" />;

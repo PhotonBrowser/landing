@@ -1,59 +1,99 @@
 import { Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-const thunderSources = [
+	const rainSource = "/audio/light-rain-loop.wav";
+	const thunderSources = [
 	"/audio/rain-thunder-storm.mp3",
 	"/audio/thunder-distant.mp3",
 	"/audio/thunder-big-rumble.mp3",
 ];
 
+const isRaining = () => document.body.classList.contains("storm-mode") && !document.body.classList.contains("storm-draining");
+
 export default function StormAudio() {
-	const rainRef = useRef<HTMLAudioElement>(null);
-	const fadeFrameRef = useRef(0);
+	const rainContextRef = useRef<AudioContext | null>(null);
+	const rainSourceRef = useRef<AudioBufferSourceNode | null>(null);
+	const rainGainRef = useRef<GainNode | null>(null);
+	const rainStartRef = useRef<Promise<void> | null>(null);
 	const thunderTimersRef = useRef(new Set<number>());
 	const thunderPlayersRef = useRef(new Set<HTMLAudioElement>());
+	const enabledRef = useRef(false);
 	const [enabled, setEnabled] = useState(false);
 
-	const fadeRain = (target: number, duration = 2_500, pauseWhenDone = false) => {
-		const rain = rainRef.current;
-		if (!rain) return;
-		cancelAnimationFrame(fadeFrameRef.current);
-		const startVolume = rain.volume;
-		const started = performance.now();
-		const tick = (now: number) => {
-			const progress = Math.min(1, (now - started) / duration);
-			rain.volume = startVolume + (target - startVolume) * (progress * progress * (3 - progress * 2));
-			if (progress < 1) fadeFrameRef.current = requestAnimationFrame(tick);
-			else if (pauseWhenDone) rain.pause();
-		};
-		fadeFrameRef.current = requestAnimationFrame(tick);
+	const stopRain = () => {
+		rainSourceRef.current?.stop();
+		rainSourceRef.current?.disconnect();
+		rainGainRef.current?.disconnect();
+		rainSourceRef.current = null;
+		rainGainRef.current = null;
+	};
+
+	const startRain = () => {
+		if (rainSourceRef.current) return Promise.resolve();
+		if (rainStartRef.current) return rainStartRef.current;
+
+		rainStartRef.current = (async () => {
+			const context = rainContextRef.current ?? new AudioContext();
+			rainContextRef.current = context;
+			void context.resume();
+			const response = await fetch(rainSource);
+			const buffer = await context.decodeAudioData(await response.arrayBuffer());
+			if (!enabledRef.current || !isRaining()) return;
+			const source = context.createBufferSource();
+			const gain = context.createGain();
+			source.buffer = buffer;
+			source.loop = true;
+			source.loopStart = 0;
+			source.loopEnd = buffer.duration;
+			gain.gain.value = 0;
+			source.connect(gain).connect(context.destination);
+			source.start();
+			rainSourceRef.current = source;
+			rainGainRef.current = gain;
+		})().finally(() => {
+			rainStartRef.current = null;
+		});
+
+		return rainStartRef.current;
+	};
+
+	const fadeRain = (target: number, duration = 2_500, stopWhenDone = false) => {
+		const context = rainContextRef.current;
+		const gain = rainGainRef.current;
+		if (!context || !gain) return;
+		const now = context.currentTime;
+		gain.gain.cancelScheduledValues(now);
+		gain.gain.setValueAtTime(gain.gain.value, now);
+		gain.gain.linearRampToValueAtTime(target, now + duration / 1000);
+		if (stopWhenDone) {
+			window.setTimeout(() => {
+				if (rainGainRef.current === gain && !isRaining()) stopRain();
+			}, duration + 50);
+		}
 	};
 
 	useEffect(() => {
-		const rain = rainRef.current;
-		if (!rain) return;
-
-		const syncRain = () => {
+		enabledRef.current = enabled;
+		const syncRain = async () => {
 			if (!enabled) return;
-			if (!document.body.classList.contains("storm-mode")) {
+			if (!isRaining()) {
 				fadeRain(0, 2_500, true);
 				return;
 			}
-			void rain.play().catch(() => setEnabled(false));
-			fadeRain(0.14);
+			await startRain();
+			if (enabledRef.current && isRaining()) fadeRain(0.14);
 		};
 		const onIntensity = (event: Event) => {
-			if (!enabled || !document.body.classList.contains("storm-mode")) return;
+			if (!enabledRef.current || !isRaining()) return;
 			const intensity = (event as CustomEvent<{ intensity: number }>).detail.intensity;
 			fadeRain(0.025 + intensity * 0.12, 500);
 		};
 		const onLightning = (event: Event) => {
-			if (!enabled || !document.body.classList.contains("storm-mode")) return;
+			if (!enabledRef.current || !isRaining()) return;
 			const intensity = (event as CustomEvent<{ intensity: number }>).detail.intensity;
 			const timer = window.setTimeout(() => {
 				thunderTimersRef.current.delete(timer);
-				const source = thunderSources[Math.floor(Math.random() * thunderSources.length)];
-				const player = new Audio(source);
+				const player = new Audio(thunderSources[Math.floor(Math.random() * thunderSources.length)]);
 				const peakVolume = 0.07 + intensity * 0.09;
 				player.volume = peakVolume;
 				player.playbackRate = 0.96 + Math.random() * 0.08;
@@ -77,7 +117,7 @@ export default function StormAudio() {
 		observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 		window.addEventListener("weather:lightning", onLightning);
 		window.addEventListener("weather:intensity", onIntensity);
-		syncRain();
+		void syncRain();
 
 		return () => {
 			observer.disconnect();
@@ -87,8 +127,8 @@ export default function StormAudio() {
 	}, [enabled]);
 
 	const toggle = () => {
-		const rain = rainRef.current;
 		const next = !enabled;
+		enabledRef.current = next;
 		setEnabled(next);
 		if (!next) {
 			thunderTimersRef.current.forEach((timer) => window.clearTimeout(timer));
@@ -96,24 +136,13 @@ export default function StormAudio() {
 			fadeRain(0, 900, true);
 			thunderPlayersRef.current.forEach((player) => player.pause());
 			thunderPlayersRef.current.clear();
-			return;
-		}
-		if (rain) {
-			rain.volume = 0;
-			if (document.body.classList.contains("storm-mode")) {
-				void rain.play().catch(() => setEnabled(false));
-				fadeRain(0.14);
-			}
 		}
 	};
 
 	return (
-		<>
-			<audio className="storm-audio-source" ref={rainRef} src="/audio/light-rain-loop.wav" loop preload="none" />
-			<button className="audio-toggle" type="button" aria-label="Toggle storm sounds" aria-pressed={enabled} onClick={toggle}>
-				{enabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
-				<span>{enabled ? "Sound on" : "Sound off"}</span>
-			</button>
-		</>
+		<button className="audio-toggle" type="button" aria-label="Toggle storm sounds" aria-pressed={enabled} onClick={toggle}>
+			{enabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
+			<span>{enabled ? "Sound on" : "Sound off"}</span>
+		</button>
 	);
 }

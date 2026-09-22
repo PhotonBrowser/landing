@@ -143,10 +143,14 @@ export default function BackgroundShader() {
 						stormTransitionFrom = stormLevel;
 						stormTransitionStart = performance.now();
 						stormTarget = 0;
-						document.body.classList.remove("storm-mode");
+						document.body.classList.add("storm-draining");
 						document.body.classList.remove("lightning-flash");
 						document.body.dataset.weather = "clear";
-						window.setTimeout(() => scheduleStorm(cycleDelay), weatherTransitionMs);
+						window.setTimeout(() => {
+							document.body.classList.remove("storm-draining");
+							document.body.classList.remove("storm-mode");
+							scheduleStorm(cycleDelay);
+						}, weatherTransitionMs);
 					}, stormAudioTailMs);
 				}, duration);
 			}, delay);
@@ -190,6 +194,7 @@ export default function BackgroundShader() {
 			window.clearTimeout(stormEndTimer);
 			window.clearTimeout(lightningTimer);
 			document.body.classList.remove("storm-mode");
+			document.body.classList.remove("storm-draining");
 			document.body.classList.remove("storm-active");
 			document.body.classList.remove("lightning-flash");
 			document.body.dataset.weather = "clear";
