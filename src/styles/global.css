@@ -497,12 +497,50 @@ h1 {
 }
 
 @media (max-width: 640px) {
-	body { padding: 10px; }
-	.page { height: calc(100dvh - 20px); }
+	body {
+		--page-inset-start: max(10px, env(safe-area-inset-top));
+		--page-inset-end: max(10px, env(safe-area-inset-bottom));
+		padding: var(--page-inset-start) max(10px, env(safe-area-inset-right)) var(--page-inset-end) max(10px, env(safe-area-inset-left));
+	}
+	.page {
+		height: auto;
+		min-height: calc(100dvh - var(--page-inset-start) - var(--page-inset-end));
+	}
+	.cloud-card {
+		height: auto;
+		min-height: 32rem;
+	}
 	.site-nav {
 		grid-template-columns: 1fr auto;
+		grid-template-rows: auto auto;
+		align-content: start;
+		row-gap: 0.25rem;
+		padding: 0.75rem 0.75rem 0;
+	}
+	.nav-links {
+		display: flex;
+		grid-column: 1 / -1;
+		grid-row: 2;
+		justify-self: center;
+		flex-wrap: wrap;
+		gap: 0.75rem clamp(0.75rem, 4vw, 1.25rem);
+		padding-block: 0.5rem;
+		font-size: 0.76rem;
+	}
+	.audio-toggle {
+		min-height: 2.75rem;
 		padding-inline: 0.75rem;
 	}
-	.nav-links { display: none; }
-	.nav-cta { font-size: 0.75rem; }
+	.hero-content {
+		padding: 6.25rem 1.25rem 1.5rem;
+		gap: 1.1rem;
+	}
+	h1 { font-size: clamp(2.2rem, 10vw, 3rem); }
+	.hero-copy { max-width: 25rem; }
+}
+
+@media (max-width: 360px) {
+	.brand { font-size: 1rem; }
+	.audio-toggle { gap: 0.25rem; padding-inline: 0.55rem; font-size: 0.7rem; }
+	.nav-links { gap: 0.65rem; font-size: 0.72rem; }
 }

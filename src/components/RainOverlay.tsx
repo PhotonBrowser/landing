@@ -3,14 +3,15 @@ import { weatherConfig } from "../config/weather";
 
 type Drop = { x: number; y: number; vx: number; vy: number; length: number; depth: number; phase: number };
 type Splash = { x: number; y: number; age: number; vx: number; vy: number; life: number };
-type Collider = { left: number; right: number; top: number };
+type Collider = { left: number; right: number; top: number; bottom: number };
 type Cursor = { x: number; y: number } | null;
 const dropStyles = [
 	{ color: "rgb(150 187 214 / 42%)", alpha: 0.22, width: 0.6 },
 	{ color: "rgb(188 216 236 / 52%)", alpha: 0.38, width: 1 },
 	{ color: "rgb(220 237 248 / 64%)", alpha: 0.55, width: 1.3 },
 ];
-const textColliderBands = [0.35, 0.7, 0.95, 0.7, 0.35];
+// Narrow at the top and bottom to follow rounded and slanted glyph outlines.
+const textColliderBands = [0.2, 0.4, 0.58, 0.74, 0.88, 0.98, 0.94, 0.82, 0.62, 0.38, 0.18];
 
 export default function RainOverlay() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,12 +35,12 @@ export default function RainOverlay() {
 		let frame = 0;
 		let previous = performance.now();
 		let spawnTimer = 0;
-		let colliderTimer = 0;
 		let stormProgress = 0;
 		let colliders: Collider[] = [];
 		const colliderBuckets = new Map<number, Collider[]>();
 		let cursor: Cursor = null;
 		let bounds = host.getBoundingClientRect();
+		let collidersDirty = true;
 		let layoutTimer = 1;
 		let lastDraw = previous;
 		let rainFrames = 0;
@@ -83,7 +84,7 @@ export default function RainOverlay() {
 			for (const element of elements) {
 				if (element.matches("button, input, .badge")) {
 					const rect = element.getBoundingClientRect();
-					next.push({ left: rect.left - hostRect.left, right: rect.right - hostRect.left, top: rect.top - hostRect.top });
+					next.push({ left: rect.left - hostRect.left, right: rect.right - hostRect.left, top: rect.top - hostRect.top, bottom: rect.bottom - hostRect.top });
 					continue;
 				}
 				const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -102,10 +103,12 @@ export default function RainOverlay() {
 							const center = left + rect.width / 2;
 							for (let band = 0; band < textColliderBands.length; band += 1) {
 								const bandWidth = rect.width * textColliderBands[band];
+								const bandTop = rect.top - hostRect.top + (rect.height * band) / textColliderBands.length;
 								next.push({
 									left: center - bandWidth / 2,
 									right: center + bandWidth / 2,
-									top: rect.top - hostRect.top + (rect.height * band) / textColliderBands.length,
+									top: bandTop,
+									bottom: bandTop + rect.height / textColliderBands.length,
 								});
 							}
 						}
@@ -123,7 +126,18 @@ export default function RainOverlay() {
 					else colliderBuckets.set(bucket, [collider]);
 				}
 			}
+			collidersDirty = false;
 		};
+		const invalidateColliders = () => {
+			collidersDirty = true;
+		};
+		const resizeObserver = new ResizeObserver(invalidateColliders);
+		resizeObserver.observe(host);
+		const mutationObserver = new MutationObserver(invalidateColliders);
+		mutationObserver.observe(host, { childList: true, characterData: true, subtree: true });
+		window.addEventListener("resize", invalidateColliders, { passive: true });
+		window.addEventListener("scroll", invalidateColliders, { passive: true, capture: true });
+		document.fonts?.ready.then(invalidateColliders);
 
 		const draw = (now: number) => {
 			if (document.hidden) {
@@ -161,10 +175,8 @@ export default function RainOverlay() {
 			const stormMode = document.body.classList.contains("storm-mode");
 			context.strokeStyle = "rgb(255 255 255 / 46%)";
 			context.lineWidth = 0.8;
-			colliderTimer += delta;
-			if (colliderTimer > 0.5) {
+			if (collidersDirty) {
 				collectColliders();
-				colliderTimer = 0;
 			}
 			if (!stormMode) {
 				drops.length = 0;
@@ -187,6 +199,7 @@ export default function RainOverlay() {
 			for (let index = 0; index < drops.length; index += 1) {
 				const drop = drops[index];
 				const previousY = drop.y * bounds.height;
+				const previousX = drop.x * bounds.width;
 				drop.vy += rain.gravity * delta;
 				const gust = Math.sin(now * 0.0007 + drop.phase) * 80 + Math.sin(now * 0.0017) * 35;
 				drop.x += ((drop.vx + gust * (0.35 + drop.depth)) * delta) / bounds.width;
@@ -194,9 +207,27 @@ export default function RainOverlay() {
 				const nextY = drop.y * bounds.height;
 				const x = drop.x * bounds.width;
 				const cursorHit = cursor && Math.abs(x - cursor.x) < 14 && previousY < cursor.y && nextY >= cursor.y;
-				const hit = colliderBuckets.get(Math.floor(x / 64))?.find((rect) => x >= rect.left && x <= rect.right && previousY < rect.top && nextY >= rect.top);
+				const horizontalSpeed = x - previousX;
+				const verticalSpeed = nextY - previousY;
+				let hitY = bounds.height;
+				let hit: Collider | undefined;
+				if (verticalSpeed > 0) {
+					const firstBucket = Math.floor(Math.min(previousX, x) / 64);
+					const lastBucket = Math.floor(Math.max(previousX, x) / 64);
+					for (let bucket = firstBucket; bucket <= lastBucket && !hit; bucket += 1) {
+						hit = colliderBuckets.get(bucket)?.find((rect) => {
+							if (nextY < rect.top || previousY > rect.bottom) return false;
+							const impactY = Math.max(rect.top, previousY);
+							const progress = (impactY - previousY) / verticalSpeed;
+							const impactX = previousX + horizontalSpeed * progress;
+							if (impactX < rect.left || impactX > rect.right) return false;
+							hitY = impactY;
+							return true;
+						});
+					}
+				}
 				if (cursorHit || hit || nextY >= bounds.height) {
-					const impactY = cursorHit ? cursor.y : hit?.top ?? bounds.height;
+					const impactY = cursorHit ? cursor.y : hit ? hitY : bounds.height;
 					const splashCount = Math.round((drop.depth > rain.foregroundDepth ? rain.foregroundSplashCount : rain.backgroundSplashCount) * particleScale);
 					for (let particle = 0; particle < splashCount; particle += 1) {
 						splashes.push({ x, y: impactY, age: 0, vx: (Math.random() - 0.5) * 90, vy: -75 - Math.random() * 75, life: 0.18 + Math.random() * 0.16 });
@@ -262,6 +293,10 @@ export default function RainOverlay() {
 		document.addEventListener("visibilitychange", onVisibilityChange);
 		return () => {
 			document.removeEventListener("visibilitychange", onVisibilityChange);
+			resizeObserver.disconnect();
+			mutationObserver.disconnect();
+			window.removeEventListener("resize", invalidateColliders);
+			window.removeEventListener("scroll", invalidateColliders, true);
 			if (performanceOverlay) {
 				window.removeEventListener("page:shader-performance", onShaderPerformance);
 				performanceOverlay.remove();

@@ -150,9 +150,13 @@ export default function BackgroundShader() {
 			}
 			const delta = Math.min((now - lastRender) / 1000, 0.05);
 			lastRender = now;
-			const dpr = Math.min(window.devicePixelRatio, 1);
-			const width = Math.round(canvas.clientWidth * dpr);
-			const height = Math.round(canvas.clientHeight * dpr);
+			const pixelArea = canvas.clientWidth * canvas.clientHeight;
+			// The cloud shader is fragment-heavy; slight downsampling preserves its soft look
+			// while cutting fragment work on large canvases.
+			const renderScale = pixelArea > 1_500_000 ? 0.75 : pixelArea > 800_000 ? 0.85 : 1;
+			const dpr = Math.min(window.devicePixelRatio, 1) * renderScale;
+			const width = Math.max(1, Math.round(canvas.clientWidth * dpr));
+			const height = Math.max(1, Math.round(canvas.clientHeight * dpr));
 			if (canvas.width !== width || canvas.height !== height) {
 				canvas.width = width;
 				canvas.height = height;
