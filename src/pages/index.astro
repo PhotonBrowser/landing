@@ -1,0 +1,32 @@
+---
+import "../styles/global.css";
+import { ChevronRight } from "lucide-react";
+import WaitlistButton from "../components/WaitlistButton";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Cloud Card</title>
+	</head>
+	<body>
+		<main class="page">
+			<section class="cloud-card" aria-label="Clouds">
+				<div class="brand">
+					<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
+					<span>Photon</span>
+				</div>
+				<div class="hero-content">
+					<div class="badge">Built on Ladybird <ChevronRight size={13} aria-hidden="true" /></div>
+					<h1>The web deserves another browser.</h1>
+					<p class="hero-copy">Independent engine. Modern interface. Built for speed.</p>
+					<WaitlistButton client:load />
+				</div>
+			</section>
+		</main>
+	</body>
+</html>
