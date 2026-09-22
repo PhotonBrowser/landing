@@ -16,15 +16,23 @@ import WaitlistButton from "../components/WaitlistButton";
 	<body>
 		<main class="page">
 			<section class="cloud-card" aria-label="Clouds">
-				<div class="brand">
-					<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
-					<span>Photon</span>
-				</div>
+				<nav class="site-nav" aria-label="Main navigation">
+					<a class="brand" href="/" aria-label="Photon home">
+						<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
+						<span>Photon</span>
+					</a>
+					<div class="nav-links">
+						<a href="#about">About</a>
+						<a href="#roadmap">Roadmap</a>
+						<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
+					</div>
+					<a class="nav-cta" href="#waitlist">Join the Waitlist</a>
+				</nav>
 				<div class="hero-content">
 					<div class="badge">Built on Ladybird <ChevronRight size={13} aria-hidden="true" /></div>
-					<h1>The web deserves another browser.</h1>
-					<p class="hero-copy">Independent engine. Modern interface. Built for speed.</p>
-					<WaitlistButton client:load />
+					<h1>Meet Photon.</h1>
+					<p class="hero-copy">A modern browser powered by an independent engine.</p>
+					<div id="waitlist"><WaitlistButton client:load /></div>
 				</div>
 			</section>
 		</main>

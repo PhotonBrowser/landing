@@ -1,36 +1,45 @@
 import { AnimatePresence, motion } from "motion/react";
+import { TextMorph } from "torph/react";
 import { ArrowRight, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-type State = "idle" | "input" | "loading" | "joined";
+type State = "idle" | "input" | "loading" | "joined" | "error";
 
 export default function WaitlistButton() {
 	const [state, setState] = useState<State>("idle");
 	const inputRef = useRef<HTMLInputElement>(null);
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		if (state === "input") inputRef.current?.focus();
 	}, [state]);
 
-	useEffect(() => () => timerRef.current && clearTimeout(timerRef.current), []);
-
-	function submit(event: React.FormEvent<HTMLFormElement>) {
+	async function submit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (!inputRef.current?.checkValidity()) {
+		const input = inputRef.current;
+		if (!input?.checkValidity()) {
 			inputRef.current?.reportValidity();
 			return;
 		}
 		setState("loading");
-		timerRef.current = setTimeout(() => setState("joined"), 2000);
+		try {
+			const response = await fetch("/api/waitlist", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email: input.value }),
+			});
+			const result = await response.json();
+			setState(result.status === "success" || result.status === "already_joined" ? "joined" : "error");
+		} catch {
+			setState("error");
+		}
 	}
 
 	return (
 		<motion.form
-			className={`waitlist-control ${state === "input" ? "waitlist-form" : state === "loading" ? "waitlist-loading" : state === "joined" ? "waitlist-success" : ""}`}
+			className={`waitlist-control ${state === "input" || state === "error" ? "waitlist-form" : state === "loading" ? "waitlist-loading" : state === "joined" ? "waitlist-success" : ""}`}
 			onSubmit={submit}
 			initial={{ width: "11rem" }}
-			animate={{ width: state === "input" ? "16rem" : state === "loading" ? "2.5rem" : state === "joined" ? "9.25rem" : "11rem" }}
+			animate={{ width: state === "input" || state === "error" ? "16rem" : state === "loading" ? "2.5rem" : state === "joined" ? "9.25rem" : "11rem" }}
 			transition={{ type: "spring", stiffness: 420, damping: 46, mass: 0.8 }}
 		>
 			<AnimatePresence initial={false} mode="sync">
@@ -45,11 +54,12 @@ export default function WaitlistButton() {
 						exit={{ opacity: 0, filter: "blur(2px)" }}
 						transition={{ duration: 0.14 }}
 					>
-						<ArrowRight size={15} aria-hidden="true" /> Join the Waitlist
+						<ArrowRight size={15} aria-hidden="true" />
+						<TextMorph duration={300}>Join the Waitlist</TextMorph>
 					</motion.button>
 				)}
 
-				{state === "input" && (
+				{(state === "input" || state === "error") && (
 					<motion.div
 						key="input"
 						className="waitlist-view"
@@ -90,7 +100,8 @@ export default function WaitlistButton() {
 						animate={{ opacity: 1, filter: "blur(0px)" }}
 						transition={{ type: "spring", stiffness: 500, damping: 28 }}
 					>
-						<Check size={17} strokeWidth={2.5} aria-hidden="true" /> On the waitlist
+						<Check size={17} strokeWidth={2.5} aria-hidden="true" />
+						<TextMorph duration={300}>On the waitlist</TextMorph>
 					</motion.div>
 				)}
 			</AnimatePresence>
