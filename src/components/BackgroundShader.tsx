@@ -1,0 +1,150 @@
+import { useEffect, useRef } from "react";
+
+const vertex = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+const fragment = `
+precision mediump float;
+uniform vec2 resolution;
+uniform float time;
+uniform float storm;
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
+float fbm(vec2 p) {
+  float value = 0.0, amplitude = 0.5;
+  for (int i = 0; i < 4; i++) { value += amplitude * noise(p); p *= 2.0; amplitude *= 0.5; }
+  return value;
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / resolution;
+  vec2 p = uv * vec2(2.4, 1.7);
+  p.x += time * 0.035;
+  vec2 warp = vec2(fbm(p * 0.55 + vec2(2.4, 7.1)), fbm(p * 0.55 + vec2(8.3, 1.6)));
+  vec2 cloudSpace = p * 0.72 + (warp - 0.5) * 0.9;
+  float shape = fbm(cloudSpace);
+  float detail = fbm(cloudSpace * 2.2 + 4.0);
+  float cloud = smoothstep(0.37, 0.58, shape + detail * 0.1);
+  cloud = pow(cloud, 0.72);
+  cloud = mix(cloud, cloud * 0.86 + detail * 0.14, 0.35);
+  cloud = mix(0.12, 0.98, cloud);
+  vec3 sky = mix(vec3(0.45, 0.78, 0.88), vec3(0.66, 0.88, 0.94), uv.y);
+  vec3 light = mix(vec3(0.98, 1.0, 1.0), vec3(0.52, 0.57, 0.63), storm);
+  sky = mix(sky, vec3(0.32, 0.4, 0.48), storm);
+  float focus = smoothstep(0.95, 0.2, distance(uv, vec2(0.5, 0.52)));
+  gl_FragColor = vec4(mix(sky, light, min(0.98, cloud + focus * 0.03)), 1.0);
+}`;
+
+export default function BackgroundShader() {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		const gl = canvas?.getContext("webgl", { antialias: false, alpha: false });
+		if (!canvas || !gl) return;
+
+		const compile = (type: number, source: string) => {
+			const shader = gl.createShader(type);
+			if (!shader) throw new Error("Shader creation failed");
+			gl.shaderSource(shader, source);
+			gl.compileShader(shader);
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) ?? "Shader compilation failed");
+			return shader;
+		};
+		const program = gl.createProgram();
+		if (!program) return;
+		gl.attachShader(program, compile(gl.VERTEX_SHADER, vertex));
+		gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragment));
+		gl.linkProgram(program);
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+		gl.useProgram(program);
+
+		const buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+		const position = gl.getAttribLocation(program, "position");
+		gl.enableVertexAttribArray(position);
+		gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+		const resolution = gl.getUniformLocation(program, "resolution");
+		const time = gl.getUniformLocation(program, "time");
+		const storm = gl.getUniformLocation(program, "storm");
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		let frame = 0;
+		let stormLevel = 0;
+		let stormTarget = 0;
+		let stormEndTimer = 0;
+		const started = performance.now();
+		const weatherTransitionMs = 2_500;
+		let stormTransitionStart = started;
+		let stormTransitionFrom = 0;
+		const isDev = import.meta.env.DEV;
+		const permanentStorm = false;
+		const stormChance = isDev ? 0.85 : 0.5;
+		const cycleDelay = isDev ? 15_000 : 5 * 60_000;
+		let cycleTimer = 0;
+		const scheduleStorm = (delay: number) => {
+			cycleTimer = window.setTimeout(() => {
+				if (!permanentStorm && Math.random() >= stormChance) return scheduleStorm(cycleDelay);
+				stormTransitionFrom = stormLevel;
+				stormTransitionStart = performance.now();
+				stormTarget = 1;
+				document.body.classList.add("storm-mode");
+				document.body.dataset.weather = "storm";
+				if (reducedMotion) document.body.classList.add("storm-active");
+				if (permanentStorm) return;
+				const duration = isDev ? 30_000 : 30_000 + Math.random() * 30_000;
+				stormEndTimer = window.setTimeout(() => {
+					stormTransitionFrom = stormLevel;
+					stormTransitionStart = performance.now();
+					stormTarget = 0;
+					document.body.classList.remove("storm-mode");
+					document.body.dataset.weather = "clear";
+				window.setTimeout(() => scheduleStorm(cycleDelay), weatherTransitionMs);
+				}, duration);
+			}, delay);
+		};
+		scheduleStorm(permanentStorm ? 0 : cycleDelay);
+
+		const render = (now: number) => {
+			const dpr = Math.min(window.devicePixelRatio, 2);
+			const width = canvas.clientWidth * dpr;
+			const height = canvas.clientHeight * dpr;
+			if (canvas.width !== width || canvas.height !== height) {
+				canvas.width = width;
+				canvas.height = height;
+				gl.viewport(0, 0, width, height);
+			}
+			gl.uniform2f(resolution, width, height);
+			gl.uniform1f(time, reducedMotion ? 0 : (now - started) / 1000);
+			if (reducedMotion) {
+				stormLevel = stormTarget;
+			} else {
+				const progress = Math.min(1, (now - stormTransitionStart) / weatherTransitionMs);
+				const eased = progress * progress * (3 - progress * 2);
+				stormLevel = stormTransitionFrom + (stormTarget - stormTransitionFrom) * eased;
+			}
+			document.body.classList.toggle("storm-active", stormLevel > 0.72);
+			gl.uniform1f(storm, stormLevel);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			if (!reducedMotion) frame = requestAnimationFrame(render);
+		};
+		render(started);
+		return () => {
+			window.clearTimeout(cycleTimer);
+			window.clearTimeout(stormEndTimer);
+			document.body.classList.remove("storm-mode");
+			document.body.classList.remove("storm-active");
+			document.body.dataset.weather = "clear";
+			cancelAnimationFrame(frame);
+		};
+	}, []);
+
+	return <canvas ref={canvasRef} className="background-shader" aria-hidden="true" />;
+}
