@@ -264,7 +264,9 @@ body.lightning-flash::after {
 	padding: 0.28rem 0.65rem;
 	border: 1px solid var(--outline);
 	border-radius: 999px;
+	color: inherit;
 	font-size: 0.75rem;
+	text-decoration: none;
 }
 
 .badge svg,
