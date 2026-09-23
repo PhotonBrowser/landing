@@ -10,9 +10,8 @@ const dropStyles = [
 	{ color: "rgb(188 216 236 / 52%)", alpha: 0.38, width: 1 },
 	{ color: "rgb(220 237 248 / 64%)", alpha: 0.55, width: 1.3 },
 ];
-// Narrow at the top and bottom to follow rounded and slanted glyph outlines.
+// Shape each glyph collider so drops hit the letters instead of their full line boxes.
 const textColliderBands = [0.2, 0.4, 0.58, 0.74, 0.88, 0.98, 0.94, 0.82, 0.62, 0.38, 0.18];
-
 export default function RainOverlay() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -22,6 +21,7 @@ export default function RainOverlay() {
 		const context = canvas?.getContext("2d");
 		if (!canvas || !host || !context) return;
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const colliderRoot = host.closest<HTMLElement>(".hero-sticky") ?? host;
 		const { rain } = weatherConfig;
 		const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
 		const lowEnd = (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || navigator.hardwareConcurrency <= 4 || nav.connection?.saveData === true;
@@ -47,7 +47,6 @@ export default function RainOverlay() {
 		let rainFrames = 0;
 		let lastRainReport = previous;
 		let rainFps = 0;
-		let shaderStats = "Shader waiting";
 		const performanceOverlay = import.meta.env.DEV ? document.createElement("pre") : null;
 		if (performanceOverlay) {
 			performanceOverlay.setAttribute("aria-hidden", "true");
@@ -58,16 +57,10 @@ export default function RainOverlay() {
 			if (!performanceOverlay) return;
 			performanceOverlay.textContent = [
 				`Rain ${rainFps} fps · ${drops.length} drops · ${splashes.length} splashes`,
-				shaderStats,
+				"Clouds rendered once; CSS drift",
 				`Rain canvas ${canvas.width}×${canvas.height} · DPR ${window.devicePixelRatio.toFixed(1)}`,
 			].join("\n");
 		};
-		const onShaderPerformance = (event: Event) => {
-			const { fps, width, height } = (event as CustomEvent<{ fps: number; width: number; height: number }>).detail;
-			shaderStats = `Shader ${fps} fps · ${width}×${height}`;
-			updatePerformanceOverlay();
-		};
-		if (performanceOverlay) window.addEventListener("page:shader-performance", onShaderPerformance);
 
 		const updateCursor = (event: PointerEvent) => {
 			cursor = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
@@ -81,7 +74,7 @@ export default function RainOverlay() {
 		const collectColliders = () => {
 			const next: Collider[] = [];
 			const hostRect = host.getBoundingClientRect();
-			const elements = [...host.querySelectorAll<HTMLElement>("button, input, .badge, h1, p")].filter((element) => !element.closest(".site-nav"));
+			const elements = [...colliderRoot.querySelectorAll<HTMLElement>("button, input, .badge, h1, p")].filter((element) => !element.closest(".site-nav"));
 			for (const element of elements) {
 				if (element.matches("button, input, .badge")) {
 					const rect = element.getBoundingClientRect();
@@ -99,19 +92,18 @@ export default function RainOverlay() {
 						range.setStart(node, character);
 						range.setEnd(node, character + 1);
 						const rect = range.getBoundingClientRect();
-						if (rect.width > 0 && rect.height > 0) {
-							const left = rect.left - hostRect.left;
-							const center = left + rect.width / 2;
-							for (let band = 0; band < textColliderBands.length; band += 1) {
-								const bandWidth = rect.width * textColliderBands[band];
-								const bandTop = rect.top - hostRect.top + (rect.height * band) / textColliderBands.length;
-								next.push({
-									left: center - bandWidth / 2,
-									right: center + bandWidth / 2,
-									top: bandTop,
-									bottom: bandTop + rect.height / textColliderBands.length,
-								});
-							}
+						if (rect.width === 0 || rect.height === 0) continue;
+						const left = rect.left - hostRect.left;
+						const center = left + rect.width / 2;
+						for (let band = 0; band < textColliderBands.length; band += 1) {
+							const bandWidth = rect.width * textColliderBands[band];
+							const bandTop = rect.top - hostRect.top + (rect.height * band) / textColliderBands.length;
+							next.push({
+								left: center - bandWidth / 2,
+								right: center + bandWidth / 2,
+								top: bandTop,
+								bottom: bandTop + rect.height / textColliderBands.length,
+							});
 						}
 					}
 				}
@@ -129,13 +121,19 @@ export default function RainOverlay() {
 			}
 			collidersDirty = false;
 		};
+		let colliderRefreshTimer = 0;
 		const invalidateColliders = () => {
-			collidersDirty = true;
+			if (colliderRefreshTimer) return;
+			colliderRefreshTimer = window.setTimeout(() => {
+				colliderRefreshTimer = 0;
+				collidersDirty = true;
+			}, 80);
 		};
 		const resizeObserver = new ResizeObserver(invalidateColliders);
 		resizeObserver.observe(host);
+		resizeObserver.observe(colliderRoot);
 		const mutationObserver = new MutationObserver(invalidateColliders);
-		mutationObserver.observe(host, { childList: true, characterData: true, subtree: true });
+		mutationObserver.observe(colliderRoot, { childList: true, characterData: true, subtree: true });
 		window.addEventListener("resize", invalidateColliders, { passive: true });
 		window.addEventListener("scroll", invalidateColliders, { passive: true, capture: true });
 		document.fonts?.ready.then(invalidateColliders);
@@ -145,7 +143,7 @@ export default function RainOverlay() {
 				frame = 0;
 				return;
 			}
-			if (now - lastDraw < 1000 / 60) {
+			if (now - lastDraw < 1000 / 30) {
 				frame = requestAnimationFrame(draw);
 				return;
 			}
@@ -296,10 +294,10 @@ export default function RainOverlay() {
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 			resizeObserver.disconnect();
 			mutationObserver.disconnect();
+			window.clearTimeout(colliderRefreshTimer);
 			window.removeEventListener("resize", invalidateColliders);
 			window.removeEventListener("scroll", invalidateColliders, true);
 			if (performanceOverlay) {
-				window.removeEventListener("page:shader-performance", onShaderPerformance);
 				performanceOverlay.remove();
 			}
 			host.removeEventListener("pointermove", updateCursor);

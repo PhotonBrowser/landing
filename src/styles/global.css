@@ -50,7 +50,6 @@ body {
 html {
 	background: var(--surface-page);
 	scroll-behavior: smooth;
-	scroll-padding-block-start: 1rem;
 }
 
 body {
@@ -67,6 +66,7 @@ body {
 .page {
 	min-height: calc(100dvh - 32px);
 	margin-block-start: calc(-1 * var(--page-inset-start));
+	margin-block-end: calc(-1 * var(--page-inset-end));
 	display: flex;
 	flex-direction: column;
 }
@@ -74,7 +74,9 @@ body {
 .hero-sticky {
 	position: sticky;
 	top: 0;
-	height: 100svh;
+	height: 100vh;
+	height: 100dvh;
+	min-height: 100dvh;
 	width: calc(100% + var(--page-inset-inline-start) + var(--page-inset-inline-end));
 	flex: none;
 	z-index: 1;
@@ -85,7 +87,8 @@ body {
 }
 
 .hero-morph-runway {
-	height: 100svh;
+	height: 100vh;
+	height: 100dvh;
 	flex: none;
 }
 
@@ -108,7 +111,8 @@ body {
 	top: 0;
 	z-index: 2;
 	width: calc(100% + var(--page-inset-inline-start) + var(--page-inset-inline-end));
-	min-height: 100svh;
+	min-height: 100vh;
+	min-height: 100dvh;
 	flex: none;
 	display: flex;
 	align-items: center;
@@ -117,7 +121,6 @@ body {
 	margin-inline-end: calc(-1 * var(--page-inset-inline-end));
 	background: var(--surface-page);
 	color: var(--text-primary);
-	scroll-margin-block-start: 1rem;
 }
 
 .content-section-inner {
@@ -154,12 +157,12 @@ body {
 }
 
 /* Keep the entrance subtle so the storm scene stays the focus. */
-.site-nav > *,
+.site-nav:not(.site-nav--sticky) > *,
 .hero-content > * {
 	animation: blur-rise-in 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-.site-nav > * { animation-delay: 180ms; }
+.site-nav:not(.site-nav--sticky) > * { animation-delay: 180ms; }
 .hero-content > :nth-child(1) { animation-delay: 260ms; }
 .hero-content > :nth-child(2) { animation-delay: 360ms; }
 .hero-content > :nth-child(3) { animation-delay: 460ms; }
@@ -177,14 +180,54 @@ body {
 
 .background-shader {
 	position: absolute;
-	inset: 0;
-	width: 100%;
+	top: 0;
+	left: -6%;
+	width: 112%;
 	height: 100%;
 	visibility: hidden;
 }
 
 .background-shader.shader-ready {
 	visibility: visible;
+	animation: cloud-drift 72s ease-in-out infinite alternate;
+}
+
+.background-lightning {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background: radial-gradient(ellipse at var(--lightning-x, 50%) var(--lightning-y, 40%), rgb(230 240 255 / 72%), rgb(185 210 240 / 20%) 18%, transparent 62%);
+	opacity: var(--lightning-opacity, 0);
+	transition: opacity 55ms ease-out;
+	pointer-events: none;
+}
+
+/* Lens dirt: a procedural grime plate (set as background-image at runtime)
+   revealed only while lightning flashes. Screen blend keeps the dark plate
+   invisible; the flash opacity drives how strongly the smudges scatter. It
+   sits above the rain because the dirt lives on the camera lens, not in the
+   scene. Opacity is capped low to keep it subtle. */
+.lens-dirt {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	background-size: cover;
+	background-position: center;
+	mix-blend-mode: screen;
+	opacity: calc(var(--lightning-opacity, 0) * 0.38);
+	transition: opacity 55ms ease-out;
+	pointer-events: none;
+}
+
+@keyframes cloud-drift {
+	from { transform: translate3d(-2%, 0, 0); }
+	to { transform: translate3d(2%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.background-shader.shader-ready {
+		animation: none;
+	}
 }
 
 .rain-overlay {
@@ -203,16 +246,16 @@ body {
 }
 
 .site-nav {
-	position: absolute;
-	z-index: 3;
-	top: 0;
-	left: 0;
-	right: 0;
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	position: fixed;
+	z-index: 5;
+	top: var(--nav-inset, var(--hero-inset));
+	left: var(--nav-inset, var(--hero-inset));
+	right: var(--nav-inset, var(--hero-inset));
+	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	min-height: 4rem;
-	padding-inline: clamp(0.75rem, 2vw, 1.75rem);
+	padding: clamp(0.75rem, 2vw, 1.75rem);
 	color: var(--text-primary);
 	pointer-events: auto;
 }
@@ -229,7 +272,6 @@ body {
 }
 
 .brand {
-	justify-self: start;
 	display: flex;
 	align-items: center;
 	gap: 0.4rem;
@@ -247,7 +289,7 @@ body {
 }
 
 .nav-links {
-	justify-self: center;
+	margin-left: auto;
 	display: flex;
 	align-items: center;
 	gap: clamp(1rem, 2.2vw, 2rem);
@@ -266,23 +308,32 @@ body {
 .nav-links a:hover { opacity: 1; transform: translateY(-1px); }
 
 .audio-toggle {
-	justify-self: end;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	padding: 0.52rem 0.8rem;
-	border: 1px solid var(--outline);
-	border-radius: 999px;
-	background: transparent;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	padding: 0;
+	border: 1px solid rgb(255 255 255 / 18%);
+	border-radius: 50%;
+	background: rgb(8 16 24 / 24%);
 	color: inherit;
 	font: inherit;
-	font-size: 0.76rem;
 	cursor: pointer;
-	transition: opacity 180ms ease;
+	transition: background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
 }
 
 .audio-toggle:hover {
-	background: var(--surface-panel);
+	background: rgb(8 16 24 / 50%);
+	border-color: rgb(255 255 255 / 34%);
+}
+
+.storm-audio-toggle {
+	position: absolute;
+	right: clamp(0.9rem, 2.2vw, 1.5rem);
+	bottom: clamp(0.9rem, 2.2vw, 1.5rem);
+	z-index: 4;
+	color: rgb(255 255 255 / 82%);
 }
 
 .nav-cta {
@@ -343,6 +394,57 @@ body {
 	pointer-events: auto;
 }
 
+.scroll-indicator {
+	position: absolute;
+	z-index: 3;
+	left: 0;
+	right: 0;
+	bottom: calc(var(--hero-inset) + 1.25rem);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.75rem;
+	color: var(--text-primary);
+	opacity: 0.85;
+	pointer-events: none;
+	animation: blur-rise-in 800ms cubic-bezier(0.2, 0.7, 0.2, 1) 700ms both;
+}
+
+.scroll-label {
+	font-size: 0.7rem;
+	font-weight: 500;
+	letter-spacing: 0.32em;
+	text-transform: uppercase;
+	text-indent: 0.32em;
+}
+
+.scroll-line {
+	position: relative;
+	display: block;
+	width: 2px;
+	height: 3.5rem;
+	overflow: hidden;
+	border-radius: 999px;
+	background: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.scroll-line::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 50%;
+	border-radius: inherit;
+	background: currentColor;
+	animation: scroll-drop 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes scroll-drop {
+	0% { transform: translateY(-100%); }
+	60%, 100% { transform: translateY(210%); }
+}
+
 #waitlist {
 	display: flex;
 	justify-content: center;
@@ -400,13 +502,41 @@ h1 {
 	transform: translateZ(0);
 	backface-visibility: hidden;
 	will-change: transform;
-	transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .button,
 .waitlist-submit {
 	border: 0;
 	font: inherit;
+}
+
+/* Springy press for all buttons: quick press down to 0.97, spring back to 1.0.
+   Motion-driven buttons (.button idle, .audio-toggle, .waitlist-submit) use
+   whileTap spring in React; their :active rule below is a pre-hydration
+   fallback with no transform transition so it never fights motion. Plain
+   buttons and .nav-cta get the full CSS fast-press / spring-release. */
+button:not(.button):not(.audio-toggle):not(.waitlist-submit) {
+	transition: transform 350ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.nav-cta {
+	transition:
+		opacity 180ms ease,
+		transform 350ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.button:active,
+.audio-toggle:active,
+.waitlist-submit:active {
+	transform: scale(0.97) translateZ(0);
+}
+
+.nav-cta:active,
+button:not(.button):not(.audio-toggle):not(.waitlist-submit):active {
+	transform: scale(0.97) translateZ(0);
+	transition:
+		opacity 180ms ease,
+		transform 150ms ease-out;
 }
 
 .button,
@@ -416,10 +546,6 @@ h1 {
 	will-change: transform;
 	backface-visibility: hidden;
 	-webkit-font-smoothing: antialiased;
-}
-
-.button:active {
-	transform: scale(0.97) translateZ(0) !important;
 }
 
 .waitlist-control {
@@ -581,22 +707,33 @@ h1 {
 	}
 	.cloud-card,
 	.site-nav > *,
-	.hero-content > * {
+	.hero-content > *,
+	.scroll-indicator {
+		animation: none;
+	}
+	.scroll-line::after {
 		animation: none;
 	}
 	.button,
 	.audio-toggle,
 	.nav-links a,
 	.nav-cta,
-	.waitlist-submit {
-		transition: none;
+	.waitlist-submit,
+	button,
+	button:not(.button):not(.audio-toggle):not(.waitlist-submit) {
+		transition: none !important;
 	}
 	.loader-container {
 		animation: none;
 	}
 
 	.button:hover,
-	.button:active {
+	.button:active,
+	.audio-toggle:active,
+	.waitlist-submit:active,
+	.nav-cta:active,
+	button:active,
+	button:not(.button):not(.audio-toggle):not(.waitlist-submit):active {
 		transform: none !important;
 	}
 
@@ -622,25 +759,14 @@ h1 {
 		min-height: min(32rem, calc(100svh - var(--hero-inset) - var(--hero-inset)));
 	}
 	.site-nav {
-		grid-template-columns: 1fr auto;
-		grid-template-rows: auto auto;
-		align-content: start;
-		row-gap: 0.25rem;
-		padding: 0.75rem 0.75rem 0;
+		padding: 0.75rem;
 	}
 	.nav-links {
 		display: flex;
-		grid-column: 1 / -1;
-		grid-row: 2;
-		justify-self: center;
 		flex-wrap: wrap;
 		gap: 0.75rem clamp(0.75rem, 4vw, 1.25rem);
 		padding-block: 0.5rem;
 		font-size: 0.76rem;
-	}
-	.audio-toggle {
-		min-height: 2.75rem;
-		padding-inline: 0.75rem;
 	}
 	.hero-content {
 		padding: 6.25rem 1.25rem 1.5rem;
@@ -652,6 +778,5 @@ h1 {
 
 @media (max-width: 360px) {
 	.brand { font-size: 1rem; }
-	.audio-toggle { gap: 0.25rem; padding-inline: 0.55rem; font-size: 0.7rem; }
 	.nav-links { gap: 0.65rem; font-size: 0.72rem; }
 }

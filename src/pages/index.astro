@@ -38,17 +38,7 @@ import ClickSound from "../components/ClickSound.astro";
 					<BackgroundShader client:load />
 					<RainOverlay client:load />
 					<ClickSound />
-					<nav class="site-nav" aria-label="Main navigation">
-						<a class="brand" href="/" aria-label="Photon home">
-							<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
-							<span>Photon</span>
-						</a>
-						<div class="nav-links">
-							<a href="#about">About</a>
-							<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
-						</div>
-						<StormAudio client:load />
-					</nav>
+					<StormAudio client:load />
 				</section>
 				<div class="hero-content">
 					<a class="badge" href="https://ladybird.org" target="_blank" rel="noreferrer">
@@ -58,8 +48,22 @@ import ClickSound from "../components/ClickSound.astro";
 					<p class="hero-copy">A modern browser powered by an independent engine.</p>
 					<div id="waitlist"><WaitlistButton client:load /></div>
 				</div>
+				<div class="scroll-indicator" aria-hidden="true">
+					<span class="scroll-label">Scroll</span>
+					<span class="scroll-line"></span>
+				</div>
 			</div>
 			<div class="hero-morph-runway" aria-hidden="true"></div>
+			<nav class="site-nav" aria-label="Main navigation">
+				<a class="brand" href="/" aria-label="Photon home">
+					<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
+					<span>Photon</span>
+				</a>
+				<div class="nav-links">
+					<a href="#about">About</a>
+					<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
+				</div>
+			</nav>
 
 			<section class="content-section" id="about" aria-labelledby="about-title">
 				<div class="content-section-inner">
@@ -79,6 +83,8 @@ import ClickSound from "../components/ClickSound.astro";
 			const card = document.querySelector<HTMLElement>(".cloud-card");
 			const morphRunway = document.querySelector<HTMLElement>(".hero-morph-runway");
 			const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+			const siteNav = document.querySelector<HTMLElement>(".site-nav");
+			const initialNavInset = frame ? Number.parseFloat(getComputedStyle(frame).paddingTop) : 0;
 
 			if (morphRunway && frame && card && !reduceMotion.matches) {
 				const morph = createTimeline({
@@ -86,15 +92,25 @@ import ClickSound from "../components/ClickSound.astro";
 					defaults: { duration: 1000, ease: "linear" },
 				})
 					.add(frame, { padding: 0 }, 0)
-					.add(card, { borderRadius: 0 }, 0);
+					.add(card, { borderRadius: 0, borderWidth: 0 }, 0);
 
 				let frameRequest = 0;
-				const updateMorph = () => {
+				let morphStart = 0;
+				let morphDistance = 1;
+				const measureMorph = () => {
 					const runwayBounds = morphRunway.getBoundingClientRect();
-					const morphStart = window.scrollY + runwayBounds.top - window.innerHeight;
-					const morphDistance = Math.max(1, morphRunway.offsetHeight);
+					morphStart = window.scrollY + runwayBounds.top - window.innerHeight;
+					morphDistance = Math.max(1, morphRunway.offsetHeight);
+				};
+				const updateMorph = () => {
 					const progress = Math.min(1, Math.max(0, (window.scrollY - morphStart) / morphDistance));
 					morph.seek(morph.duration * progress);
+					const navInset = initialNavInset * (1 - progress);
+					siteNav?.style.setProperty("--nav-inset", `${navInset}px`);
+				};
+				const onResize = () => {
+					measureMorph();
+					queueMorphUpdate();
 				};
 				const queueMorphUpdate = () => {
 					if (frameRequest) return;
@@ -105,11 +121,14 @@ import ClickSound from "../components/ClickSound.astro";
 				};
 
 				window.addEventListener("scroll", queueMorphUpdate, { passive: true });
-				window.addEventListener("resize", queueMorphUpdate);
+				window.addEventListener("resize", onResize, { passive: true });
+				measureMorph();
 				updateMorph();
 			} else if (frame && card) {
 				frame.style.padding = "0px";
 				card.style.borderRadius = "0px";
+				card.style.borderWidth = "0px";
+				siteNav?.style.setProperty("--nav-inset", "0px");
 			}
 		</script>
 	</body>

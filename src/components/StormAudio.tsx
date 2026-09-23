@@ -190,17 +190,16 @@ export default function StormAudio() {
 
 	return (
 		<motion.button
-			className="audio-toggle"
+			className="audio-toggle storm-audio-toggle"
 			type="button"
-			aria-label="Toggle storm sounds"
+			aria-label={enabled ? "Turn storm sounds off" : "Turn storm sounds on"}
 			aria-pressed={enabled}
 			onClick={toggle}
 			whileTap={{ scale: 0.97 }}
 			transformTemplate={(transform) => `${transform} translateZ(0)`}
-			transition={{ type: "spring", stiffness: 420, damping: 46, mass: 0.8 }}
+			transition={{ type: "spring", stiffness: 500, damping: 32, mass: 1 }}
 		>
-			{enabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
-			<span>{enabled ? "Sound on" : "Sound off"}</span>
+			{enabled ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" />}
 		</motion.button>
 	);
 }

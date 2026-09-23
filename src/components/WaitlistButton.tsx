@@ -53,6 +53,8 @@ export default function WaitlistButton() {
 						animate={{ opacity: 1, filter: "blur(0px)" }}
 						exit={{ opacity: 0, filter: "blur(2px)" }}
 						transition={{ duration: 0.14 }}
+						whileTap={{ scale: 0.97, transition: { type: "spring", stiffness: 500, damping: 32, mass: 1 } }}
+						transformTemplate={(transform) => `${transform} translateZ(0)`}
 					>
 						<ArrowRight size={15} aria-hidden="true" />
 						<TextMorph duration={300}>Join the Waitlist</TextMorph>
@@ -75,7 +77,7 @@ export default function WaitlistButton() {
 							aria-label="Join waitlist"
 							whileTap={{ scale: 0.97 }}
 							transformTemplate={(transform) => `${transform} translateZ(0)`}
-							transition={{ type: "spring", stiffness: 420, damping: 46, mass: 0.8 }}
+							transition={{ type: "spring", stiffness: 500, damping: 32, mass: 1 }}
 						>
 							<Check size={16} aria-hidden="true" />
 						</motion.button>
