@@ -275,6 +275,7 @@ export default function RainOverlay() {
 		};
 
 		frame = requestAnimationFrame(draw);
+		window.dispatchEvent(new Event("photon:rain-ready"));
 		const onVisibilityChange = () => {
 			if (document.hidden) {
 				cancelAnimationFrame(frame);

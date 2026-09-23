@@ -153,6 +153,7 @@ export default function BackgroundShader() {
 			gl.uniform2f(referenceResolution, width, height);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			canvas.classList.add("shader-ready");
+			window.dispatchEvent(new Event("photon:shader-ready"));
 		};
 
 		const card = canvas.closest<HTMLElement>(".cloud-card");

@@ -32,6 +32,16 @@ import ClickSound from "../components/ClickSound.astro";
 		<title>Photon Browser</title>
 	</head>
 	<body class="storm-mode storm-active" data-weather="storm">
+		<div class="site-loader" id="site-loader" role="status" aria-live="polite" aria-label="Loading Photon">
+			<div class="loader-core">
+				<div class="loader-mark" aria-hidden="true">
+					<div class="loader-mark-base"></div>
+					<div class="loader-mark-fill" id="loader-mark-fill"></div>
+				</div>
+				<div class="loader-track" aria-hidden="true"><span id="loader-progress"></span></div>
+				<div class="loader-meta"><span id="loader-status">Loading</span><span id="loader-percent" aria-hidden="true">00%</span></div>
+			</div>
+		</div>
 		<main class="page">
 			<div class="hero-sticky" id="top">
 				<section class="cloud-card" aria-label="Photon introduction">
@@ -77,6 +87,65 @@ import ClickSound from "../components/ClickSound.astro";
 			</section>
 		</main>
 		<script>
+			const loader = document.querySelector<HTMLElement>("#site-loader");
+			const fill = document.querySelector<HTMLElement>("#loader-mark-fill");
+			const progressBar = document.querySelector<HTMLElement>("#loader-progress");
+			const percentLabel = document.querySelector<HTMLElement>("#loader-percent");
+			const statusLabel = document.querySelector<HTMLElement>("#loader-status");
+			const ready = new Set<string>();
+			const loaderReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+			const connection = (navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+			const skipRainWait = loaderReduceMotion.matches || connection?.saveData === true || ["slow-2g", "2g"].includes(connection?.effectiveType ?? "");
+			const required = skipRainWait ? ["page", "fonts", "images", "shader"] : ["page", "fonts", "images", "shader", "rain"];
+			let progress = 0;
+			let targetProgress = 0;
+			let milestoneAt = performance.now();
+			let finished = false;
+			const updateProgress = () => {
+				milestoneAt = performance.now();
+				targetProgress = Math.max(targetProgress, Math.min(96, Math.round((ready.size / required.length) * 96)));
+				if (required.every((item) => ready.has(item)) && !finished) {
+					finished = true;
+					if (statusLabel) statusLabel.textContent = "Welcome to Photon";
+					targetProgress = 100;
+					window.setTimeout(() => {
+						loader?.classList.add("site-loader--leaving");
+						document.body.classList.add("site-loaded");
+						window.setTimeout(() => loader?.remove(), 1100);
+					}, loaderReduceMotion.matches ? 0 : 420);
+				}
+			};
+			const animateProgress = () => {
+				if (!loader?.isConnected) return;
+				if (!loaderReduceMotion.matches && !finished) {
+					const coast = Math.min(7, Math.max(0, performance.now() - milestoneAt) * 0.0014);
+					targetProgress = Math.min(94, Math.max(targetProgress, Math.floor((ready.size / required.length) * 96 + coast)));
+				}
+				if (loaderReduceMotion.matches) progress = targetProgress;
+				else progress += (targetProgress - progress) * 0.065;
+				if (Math.abs(targetProgress - progress) < 0.12) progress = targetProgress;
+				if (progressBar) progressBar.style.transform = `scaleX(${progress / 100})`;
+				if (fill) fill.style.clipPath = `inset(${100 - progress}% 0 0)`;
+				if (percentLabel) percentLabel.textContent = `${String(Math.floor(progress)).padStart(2, "0")}%`;
+				window.requestAnimationFrame(animateProgress);
+			};
+			window.requestAnimationFrame(animateProgress);
+			const markReady = (name: string) => { ready.add(name); updateProgress(); };
+			window.addEventListener("photon:shader-ready", () => markReady("shader"), { once: true });
+			if (!skipRainWait) window.addEventListener("photon:rain-ready", () => markReady("rain"), { once: true });
+			const loadPageAssets = async () => {
+				const logo = new Image();
+				logo.src = "/brand-kit/logo/logo-black.svg";
+				await Promise.allSettled([...Array.from(document.images, (image) => image.decode()), logo.decode()]);
+				markReady("images");
+				await document.fonts.ready;
+				markReady("fonts");
+				if (document.readyState === "complete") markReady("page");
+				else window.addEventListener("load", () => markReady("page"), { once: true });
+			};
+			void loadPageAssets();
+			window.setTimeout(() => { required.filter((item) => !ready.has(item)).forEach(markReady); }, 9000);
+
 			import { createTimeline } from "animejs";
 
 			const frame = document.querySelector<HTMLElement>(".hero-sticky");
