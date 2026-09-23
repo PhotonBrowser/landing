@@ -4,6 +4,8 @@ const vertex = `attribute vec2 position; void main() { gl_Position = vec4(positi
 const fragment = `
 precision highp float;
 uniform vec2 resolution;
+uniform vec2 cssResolution;
+uniform vec2 referenceResolution;
 uniform float time;
 uniform float storm;
 uniform float lightning;
@@ -27,8 +29,9 @@ float fbm(vec2 p) {
 
 void main() {
   vec2 uv = gl_FragCoord.xy / resolution;
-  // Keep cloud features the same size in both axes as the canvas aspect changes.
-  vec2 p = uv * vec2((resolution.x / resolution.y) * 1.7, 1.7);
+  // Keep the cloud field anchored to its initial size as the card reveals more canvas.
+  vec2 p = (uv - vec2(0.5)) * cssResolution * (1.7 / referenceResolution.y)
+    + referenceResolution * (0.85 / referenceResolution.y);
   vec2 slowSpace = p * 0.72 + vec2(time * 0.018, time * 0.006);
   vec2 fastSpace = p * 1.28 + vec2(-time * 0.028, time * 0.012);
   vec2 deepSpace = p * 0.44 + vec2(-time * 0.006, time * 0.003);
@@ -54,7 +57,10 @@ void main() {
   sky += vec3(0.72, 0.8, 0.92) * lightning * cloudGap * (0.05 + lightningArea * 0.95) * (0.24 + 0.76 * uv.y);
   // Keep smoothstep's edges ordered; reversed edges are undefined in GLSL ES.
   float focus = 1.0 - smoothstep(0.2, 0.95, distance(uv, vec2(0.5, 0.52)));
-  gl_FragColor = vec4(mix(sky, light, min(0.98, cloud + focus * 0.03)), 1.0);
+  vec3 color = mix(sky, light, min(0.98, cloud + focus * 0.03));
+  float flash = lightning * (0.11 + lightningArea * 0.55);
+  color = min(vec3(1.0), color + vec3(0.72, 0.82, 0.96) * flash);
+  gl_FragColor = vec4(color, 1.0);
 }`;
 
 export default function BackgroundShader() {
@@ -90,6 +96,8 @@ export default function BackgroundShader() {
 		gl.enableVertexAttribArray(position);
 		gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
 		const resolution = gl.getUniformLocation(program, "resolution");
+		const cssResolutionUniform = gl.getUniformLocation(program, "cssResolution");
+		const referenceResolutionUniform = gl.getUniformLocation(program, "referenceResolution");
 		const time = gl.getUniformLocation(program, "time");
 		const storm = gl.getUniformLocation(program, "storm");
 		const lightning = gl.getUniformLocation(program, "lightning");
@@ -97,23 +105,36 @@ export default function BackgroundShader() {
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		let frame = 0;
 		const started = performance.now();
+		let shaderTime = 0;
 		let lightningLevel = 0;
 		let lightningTimer = 0;
+		const lightningPulseTimers = new Set<number>();
+		let cardOccluded = false;
 		let lastRender = started;
 		let lastAudioStormLevel = -1;
 		let performanceFrames = 0;
 		let lastPerformanceReport = started;
 		let currentLightningPosition: [number, number] = [0.5, 0.5];
+		let referenceCssWidth = 0;
+		let referenceCssHeight = 0;
 		const stormLevel = 1;
 		const stormTarget = 1;
 		const lightningChance = 0.68;
 		const nextLightningDelay = () => 18_000 + Math.random() * 42_000;
+		const scheduleLightningPulse = (callback: () => void, delay: number) => {
+			const timer = window.setTimeout(() => {
+				lightningPulseTimers.delete(timer);
+				callback();
+			}, delay);
+			lightningPulseTimers.add(timer);
+		};
 
 		document.body.classList.add("storm-mode", "storm-active");
 		document.body.dataset.weather = "storm";
 		const scheduleLightning = (delay: number) => {
 			lightningTimer = window.setTimeout(() => {
-				if (stormTarget === 1) {
+				lightningTimer = 0;
+				if (stormTarget === 1 && !cardOccluded && !document.hidden) {
 					if (Math.random() < lightningChance) {
 						const baseIntensity = 0.68 + Math.random() * 0.32;
 						currentLightningPosition = [0.16 + Math.random() * 0.68, 0.16 + Math.random() * 0.68];
@@ -123,12 +144,12 @@ export default function BackgroundShader() {
 							const intensity = baseIntensity * (0.62 + Math.random() * 0.38) * (1 - pulse * (0.08 + Math.random() * 0.14));
 							lightningLevel = intensity;
 							if (pulse === 0) window.dispatchEvent(new CustomEvent("weather:lightning", { detail: { intensity: baseIntensity } }));
-							document.body.classList.add("lightning-flash");
-							window.setTimeout(() => {
+							scheduleLightningPulse(() => {
 								lightningLevel = 0;
-								document.body.classList.remove("lightning-flash");
 								pulse += 1;
-								if (pulse < pulseCount && stormTarget === 1) window.setTimeout(flashPulse, 45 + Math.random() * 260);
+								if (pulse < pulseCount && stormTarget === 1 && !cardOccluded && !document.hidden) {
+									scheduleLightningPulse(flashPulse, 45 + Math.random() * 260);
+								}
 							}, 18 + Math.random() * 68);
 						};
 						flashPulse();
@@ -137,10 +158,9 @@ export default function BackgroundShader() {
 				}
 			}, delay);
 		};
-		if (!reducedMotion) scheduleLightning(12_000 + Math.random() * 18_000);
 
 		const render = (now: number) => {
-			if (document.hidden) {
+			if (document.hidden || cardOccluded) {
 				frame = 0;
 				return;
 			}
@@ -150,6 +170,7 @@ export default function BackgroundShader() {
 			}
 			const delta = Math.min((now - lastRender) / 1000, 0.05);
 			lastRender = now;
+			if (!reducedMotion) shaderTime += delta;
 			const pixelArea = canvas.clientWidth * canvas.clientHeight;
 			// The cloud shader is fragment-heavy; slight downsampling preserves its soft look
 			// while cutting fragment work on large canvases.
@@ -157,13 +178,21 @@ export default function BackgroundShader() {
 			const dpr = Math.min(window.devicePixelRatio, 1) * renderScale;
 			const width = Math.max(1, Math.round(canvas.clientWidth * dpr));
 			const height = Math.max(1, Math.round(canvas.clientHeight * dpr));
+			const cssWidth = Math.max(1, canvas.clientWidth);
+			const cssHeight = Math.max(1, canvas.clientHeight);
+			if (referenceCssWidth === 0) {
+				referenceCssWidth = cssWidth;
+				referenceCssHeight = cssHeight;
+			}
 			if (canvas.width !== width || canvas.height !== height) {
 				canvas.width = width;
 				canvas.height = height;
 				gl.viewport(0, 0, width, height);
 			}
 			gl.uniform2f(resolution, width, height);
-			gl.uniform1f(time, reducedMotion ? 0 : (now - started) / 1000);
+			gl.uniform2f(cssResolutionUniform, cssWidth, cssHeight);
+			gl.uniform2f(referenceResolutionUniform, referenceCssWidth, referenceCssHeight);
+			gl.uniform1f(time, reducedMotion ? 0 : shaderTime);
 			lightningLevel *= Math.exp(-delta * 14);
 			if (Math.abs(stormLevel - lastAudioStormLevel) > 0.02) {
 				lastAudioStormLevel = stormLevel;
@@ -190,27 +219,57 @@ export default function BackgroundShader() {
 			}
 			if (!reducedMotion) frame = requestAnimationFrame(render);
 		};
-		const onVisibilityChange = () => {
-			if (document.hidden) {
+		const updateAnimationState = () => {
+			if (document.hidden || cardOccluded) {
 				cancelAnimationFrame(frame);
 				frame = 0;
+				window.clearTimeout(lightningTimer);
+				lightningTimer = 0;
+				lightningPulseTimers.forEach(window.clearTimeout);
+				lightningPulseTimers.clear();
+				lightningLevel = 0;
 				return;
 			}
+
 			if (!reducedMotion && !frame) {
 				lastRender = performance.now();
 				lastPerformanceReport = lastRender;
 				performanceFrames = 0;
 				frame = requestAnimationFrame(render);
 			}
+			if (!reducedMotion && !lightningTimer) scheduleLightning(nextLightningDelay());
+		};
+		const card = canvas.closest<HTMLElement>(".cloud-card");
+		const occludingSection = document.querySelector<HTMLElement>(".content-section");
+		const updateOcclusion = () => {
+			if (!card || !occludingSection) return;
+			const cardBounds = card.getBoundingClientRect();
+			const sectionBounds = occludingSection.getBoundingClientRect();
+			const nextOccluded = sectionBounds.top <= cardBounds.top && sectionBounds.bottom >= cardBounds.bottom;
+			if (nextOccluded === cardOccluded) return;
+			cardOccluded = nextOccluded;
+			updateAnimationState();
+		};
+		const onVisibilityChange = () => {
+			updateAnimationState();
 		};
 		document.addEventListener("visibilitychange", onVisibilityChange);
+		window.addEventListener("scroll", updateOcclusion, { passive: true });
+		window.addEventListener("resize", updateOcclusion);
+		updateOcclusion();
 		render(started);
+		if (!reducedMotion && !cardOccluded && !document.hidden) {
+			scheduleLightning(12_000 + Math.random() * 18_000);
+		}
 		return () => {
 			document.removeEventListener("visibilitychange", onVisibilityChange);
+			window.removeEventListener("scroll", updateOcclusion);
+			window.removeEventListener("resize", updateOcclusion);
 			window.clearTimeout(lightningTimer);
+			lightningPulseTimers.forEach(window.clearTimeout);
+			lightningPulseTimers.clear();
 			document.body.classList.remove("storm-mode");
 			document.body.classList.remove("storm-active");
-			document.body.classList.remove("lightning-flash");
 			document.body.dataset.weather = "clear";
 			cancelAnimationFrame(frame);
 		};

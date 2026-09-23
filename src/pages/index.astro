@@ -33,22 +33,23 @@ import ClickSound from "../components/ClickSound.astro";
 	</head>
 	<body class="storm-mode storm-active" data-weather="storm">
 		<main class="page">
-			<section class="cloud-card" aria-label="Clouds">
-				<BackgroundShader client:load />
-				<RainOverlay client:load />
-				<ClickSound />
-				<nav class="site-nav" aria-label="Main navigation">
-					<a class="brand" href="/" aria-label="Photon home">
-						<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
-						<span>Photon</span>
-					</a>
-					<div class="nav-links">
-						<a href="#about">About</a>
-						<a href="#roadmap">Roadmap</a>
-						<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
-					</div>
-					<StormAudio client:load />
-				</nav>
+			<div class="hero-sticky" id="top">
+				<section class="cloud-card" aria-label="Photon introduction">
+					<BackgroundShader client:load />
+					<RainOverlay client:load />
+					<ClickSound />
+					<nav class="site-nav" aria-label="Main navigation">
+						<a class="brand" href="/" aria-label="Photon home">
+							<img class="logo" src="/brand-kit/logo/logo.svg" alt="" />
+							<span>Photon</span>
+						</a>
+						<div class="nav-links">
+							<a href="#about">About</a>
+							<a href="https://github.com/LadybirdBrowser/ladybird" target="_blank" rel="noreferrer">GitHub</a>
+						</div>
+						<StormAudio client:load />
+					</nav>
+				</section>
 				<div class="hero-content">
 					<a class="badge" href="https://ladybird.org" target="_blank" rel="noreferrer">
 						Built on Ladybird <ChevronRight size={13} aria-hidden="true" />
@@ -57,7 +58,59 @@ import ClickSound from "../components/ClickSound.astro";
 					<p class="hero-copy">A modern browser powered by an independent engine.</p>
 					<div id="waitlist"><WaitlistButton client:load /></div>
 				</div>
+			</div>
+			<div class="hero-morph-runway" aria-hidden="true"></div>
+
+			<section class="content-section" id="about" aria-labelledby="about-title">
+				<div class="content-section-inner">
+					<div class="about-copy">
+						<h2 id="about-title">Photon is built on Ladybird, an independent browser engine.</h2>
+						<div>
+							<p>We’re building Photon to bring Ladybird to everyday browsing and give people another browser engine to choose from.</p>
+						</div>
+					</div>
+				</div>
 			</section>
 		</main>
+		<script>
+			import { createTimeline } from "animejs";
+
+			const frame = document.querySelector<HTMLElement>(".hero-sticky");
+			const card = document.querySelector<HTMLElement>(".cloud-card");
+			const morphRunway = document.querySelector<HTMLElement>(".hero-morph-runway");
+			const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+			if (morphRunway && frame && card && !reduceMotion.matches) {
+				const morph = createTimeline({
+					autoplay: false,
+					defaults: { duration: 1000, ease: "linear" },
+				})
+					.add(frame, { padding: 0 }, 0)
+					.add(card, { borderRadius: 0 }, 0);
+
+				let frameRequest = 0;
+				const updateMorph = () => {
+					const runwayBounds = morphRunway.getBoundingClientRect();
+					const morphStart = window.scrollY + runwayBounds.top - window.innerHeight;
+					const morphDistance = Math.max(1, morphRunway.offsetHeight);
+					const progress = Math.min(1, Math.max(0, (window.scrollY - morphStart) / morphDistance));
+					morph.seek(morph.duration * progress);
+				};
+				const queueMorphUpdate = () => {
+					if (frameRequest) return;
+					frameRequest = window.requestAnimationFrame(() => {
+						frameRequest = 0;
+						updateMorph();
+					});
+				};
+
+				window.addEventListener("scroll", queueMorphUpdate, { passive: true });
+				window.addEventListener("resize", queueMorphUpdate);
+				updateMorph();
+			} else if (frame && card) {
+				frame.style.padding = "0px";
+				card.style.borderRadius = "0px";
+			}
+		</script>
 	</body>
 </html>

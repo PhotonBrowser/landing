@@ -49,39 +49,51 @@ body {
 
 html {
 	background: var(--surface-page);
+	scroll-behavior: smooth;
+	scroll-padding-block-start: 1rem;
 }
 
 body {
+	--page-inset-start: 16px;
+	--page-inset-end: 16px;
+	--page-inset-inline-start: 16px;
+	--page-inset-inline-end: 16px;
+	--hero-inset: 16px;
 	min-height: 100dvh;
 	padding: 16px;
 	background: var(--surface-page);
 }
 
-body::after {
-	position: fixed;
-	inset: 0;
-	z-index: 10;
-	content: "";
-	pointer-events: none;
-	background: rgb(235 245 255 / 100%);
-	mix-blend-mode: screen;
-	opacity: 0;
-}
-
-body.lightning-flash::after {
-	opacity: 0.055;
-}
-
 .page {
-	height: calc(100dvh - 32px);
-	display: grid;
-	place-items: center;
+	min-height: calc(100dvh - 32px);
+	margin-block-start: calc(-1 * var(--page-inset-start));
+	display: flex;
+	flex-direction: column;
+}
+
+.hero-sticky {
+	position: sticky;
+	top: 0;
+	height: 100svh;
+	width: calc(100% + var(--page-inset-inline-start) + var(--page-inset-inline-end));
+	flex: none;
+	z-index: 1;
+	padding: var(--hero-inset);
+	box-sizing: border-box;
+	margin-inline-start: calc(-1 * var(--page-inset-inline-start));
+	margin-inline-end: calc(-1 * var(--page-inset-inline-end));
+}
+
+.hero-morph-runway {
+	height: 100svh;
+	flex: none;
 }
 
 .cloud-card {
 	position: relative;
 	width: 100%;
 	height: 100%;
+	min-height: 0;
 	border-radius: clamp(1.25rem, 4.1vw, 3.1rem);
 	corner-shape: squircle;
 	border: 1px solid var(--border-card);
@@ -89,6 +101,56 @@ body.lightning-flash::after {
 	background: var(--surface-card);
 	overflow: hidden;
 	animation: card-enter 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.content-section {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	width: calc(100% + var(--page-inset-inline-start) + var(--page-inset-inline-end));
+	min-height: 100svh;
+	flex: none;
+	display: flex;
+	align-items: center;
+	padding: clamp(2rem, 6vw, 5rem);
+	margin-inline-start: calc(-1 * var(--page-inset-inline-start));
+	margin-inline-end: calc(-1 * var(--page-inset-inline-end));
+	background: var(--surface-page);
+	color: var(--text-primary);
+	scroll-margin-block-start: 1rem;
+}
+
+.content-section-inner {
+	width: min(100%, 72rem);
+	margin-inline: auto;
+}
+
+.about-copy {
+	max-width: 52rem;
+}
+
+.content-section h2 {
+	max-width: 48rem;
+	margin: 0;
+	font-size: clamp(2rem, 3.8vw, 3.1rem);
+	font-weight: 400;
+	line-height: 1.14;
+	letter-spacing: -0.035em;
+}
+
+.about-copy > div {
+	max-width: 38rem;
+	margin-block-start: clamp(1.25rem, 3vw, 2rem);
+	font-size: 1.05rem;
+	line-height: 1.75;
+}
+
+.about-copy p {
+	margin: 0;
+}
+
+.about-copy p + p {
+	margin-block-start: 1rem;
 }
 
 /* Keep the entrance subtle so the storm scene stays the focus. */
@@ -138,10 +200,6 @@ body.lightning-flash::after {
 
 .storm-mode .rain-overlay {
 	opacity: 0.8;
-}
-
-.lightning-flash .cloud-card {
-	filter: brightness(1.045) contrast(1.02);
 }
 
 .site-nav {
@@ -268,7 +326,7 @@ body.lightning-flash::after {
 
 .hero-content {
 	position: absolute;
-	z-index: 1;
+	z-index: 3;
 	inset: 0;
 	display: flex;
 	flex-direction: column;
@@ -278,6 +336,11 @@ body.lightning-flash::after {
 	padding-inline: 1rem;
 	color: var(--text-primary);
 	text-align: center;
+	pointer-events: none;
+}
+
+.hero-content > * {
+	pointer-events: auto;
 }
 
 #waitlist {
@@ -510,6 +573,9 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
 	.rain-overlay {
 		display: none;
 	}
@@ -540,15 +606,20 @@ h1 {
 	body {
 		--page-inset-start: max(10px, env(safe-area-inset-top));
 		--page-inset-end: max(10px, env(safe-area-inset-bottom));
-		padding: var(--page-inset-start) max(10px, env(safe-area-inset-right)) var(--page-inset-end) max(10px, env(safe-area-inset-left));
+		--page-inset-inline-start: max(10px, env(safe-area-inset-left));
+		--page-inset-inline-end: max(10px, env(safe-area-inset-right));
+		--hero-inset: 10px;
+		padding: var(--page-inset-start) var(--page-inset-inline-end) var(--page-inset-end) var(--page-inset-inline-start);
 	}
 	.page {
 		height: auto;
 		min-height: calc(100dvh - var(--page-inset-start) - var(--page-inset-end));
 	}
+	.content-section {
+		padding: 1.5rem;
+	}
 	.cloud-card {
-		height: auto;
-		min-height: 32rem;
+		min-height: min(32rem, calc(100svh - var(--hero-inset) - var(--hero-inset)));
 	}
 	.site-nav {
 		grid-template-columns: 1fr auto;
