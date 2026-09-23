@@ -21,6 +21,7 @@ export default function RainOverlay() {
 		const host = canvas?.closest<HTMLElement>(".cloud-card");
 		const context = canvas?.getContext("2d");
 		if (!canvas || !host || !context) return;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 		const { rain } = weatherConfig;
 		const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
 		const lowEnd = (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || navigator.hardwareConcurrency <= 4 || nav.connection?.saveData === true;

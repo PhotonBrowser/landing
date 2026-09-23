@@ -15,7 +15,21 @@ import ClickSound from "../components/ClickSound.astro";
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Cloud Card</title>
+		<meta name="description" content="Photon is a modern browser powered by Ladybird, an independent browser engine." />
+		<meta name="theme-color" content="#76b4fb" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="Photon Browser" />
+		<meta property="og:description" content="A modern browser powered by an independent engine." />
+		<meta property="og:url" content={`${Astro.url.origin}${Astro.url.pathname}`} />
+		<meta property="og:image" content={`${Astro.url.origin}/brand-kit/social/og-image.png`} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Photon Browser logo" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Photon Browser" />
+		<meta name="twitter:description" content="A modern browser powered by an independent engine." />
+		<meta name="twitter:image" content={`${Astro.url.origin}/brand-kit/social/og-image.png`} />
+		<title>Photon Browser</title>
 	</head>
 	<body class="storm-mode storm-active" data-weather="storm">
 		<main class="page">

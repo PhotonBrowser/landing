@@ -12,6 +12,8 @@
 	--text-placeholder: rgb(0 0 0 / 48%);
 	--accent: #4f9cf7;
 	--accent-text: #ffffff;
+	--brand-color-1: #76b4fb;
+	--focus-ring: var(--brand-color-1);
 	--outline: rgb(0 0 0 / 18%);
 	--border-card: rgb(0 0 0 / 6%);
 	--shadow-card: 0 2px 12px rgb(0 0 0 / 06%);
@@ -26,9 +28,13 @@
 	box-sizing: border-box;
 }
 
-*:focus,
-*:focus-visible {
+*:focus {
 	outline: none;
+}
+
+*:focus-visible {
+	outline: 1px solid var(--focus-ring);
+	outline-offset: 3px;
 }
 
 ::-moz-focus-inner {
@@ -504,6 +510,9 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.rain-overlay {
+		display: none;
+	}
 	.cloud-card,
 	.site-nav > *,
 	.hero-content > * {
@@ -515,6 +524,9 @@ h1 {
 	.nav-cta,
 	.waitlist-submit {
 		transition: none;
+	}
+	.loader-container {
+		animation: none;
 	}
 
 	.button:hover,
