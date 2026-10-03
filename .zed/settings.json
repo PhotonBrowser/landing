@@ -1,0 +1,39 @@
+{
+  // Project-local Zed settings: Biome is the formatter/linter.
+  // Requires the Biome extension (or built-in Biome LSP) in Zed.
+  "format_on_save": "on",
+  "formatter": "language_server",
+  "code_actions_on_format": {
+    "source.organizeImports.biome": true
+  },
+  "languages": {
+    "TypeScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "TSX": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "JavaScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "JSX": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "JSON": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "JSONC": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    },
+    "CSS": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "format_on_save": "on"
+    }
+  }
+}

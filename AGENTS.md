@@ -1,22 +1,19 @@
-## Development
+# AGENTS.md
 
-When starting the dev server, use background mode:
+Vite + React 19 + TypeScript project. Package manager is `bun`.
 
-```
-astro dev --background
-```
+## Commands
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+- `bun run dev` — start dev server
+- `bun run build` — typecheck (`tsc -b`) + production build
+- `bun run preview` — preview production build
 
-## Documentation
+## Lint
 
-Full documentation: https://docs.astro.build
+After making changes, run both linters and fix all errors:
 
-Consult these guides before working on related tasks:
+- `bun run lint` — Biome (format, lint, organize imports)
+- `bun run lint:oxlint` — Oxlint, hosts `@shadcn/lint` design-system rules
 
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+Formatting (2-space, single quotes) is enforced by Biome with format-on-save
+in `.zed/settings.json`.
