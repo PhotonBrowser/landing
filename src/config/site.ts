@@ -5,7 +5,10 @@ export const xLink = {
   icon: 'x',
 } as const;
 
-export const siteLinks = [{ label: 'FAQ', href: '#faq' }, xLink] as const;
+export const siteLinks = [
+  { label: 'Roadmap', href: '/roadmap' },
+  xLink,
+] as const;
 
 export type Contributor = {
   name: string;
@@ -22,9 +25,5 @@ export const contributors: readonly Contributor[] = [
     href: 'https://x.com/theo_slat',
     avatar: 'https://unavatar.io/x/theo_slat',
     platform: 'x',
-  },
-  {
-    name: '@ollie',
-    displayName: 'Ollie',
   },
 ];

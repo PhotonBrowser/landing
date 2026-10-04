@@ -91,7 +91,7 @@ function App() {
         animated="scroll"
       />
       <HeroPanel showHomeLink={route !== 'home'}>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait">
           <motion.div
             key={route}
             initial={

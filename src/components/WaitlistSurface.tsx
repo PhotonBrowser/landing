@@ -39,7 +39,7 @@ function SurfaceContent({
   const isComplete = state === 'success' || state === 'duplicate';
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="wait">
       {state === 'submitting' ? (
         <motion.div
           key="submitting"
@@ -72,30 +72,27 @@ function SurfaceContent({
           role="status"
           aria-live="polite"
         >
-          {state === 'success' && !shouldReduceMotion && (
-            <span className="waitlist-success-glow" aria-hidden="true" />
-          )}
-          <h2 className="relative z-10 font-heading text-lg font-medium tracking-tight text-balance">
+          <h2 className="font-heading text-lg font-medium tracking-tight text-balance">
             {state === 'duplicate'
               ? WAITLIST_COPY.duplicate
               : WAITLIST_COPY.ready}
           </h2>
           {state === 'success' ? (
             <>
-              <p className="relative z-10 text-sm text-on-overlay/85 sm:text-base">
+              <p className="text-sm text-on-overlay/85 sm:text-base">
                 We’ll let you know when Photon is ready.
               </p>
               <a
                 href={xLink.href}
                 target="_blank"
                 rel="noreferrer"
-                className="relative z-10 text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
+                className="text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
               >
                 Follow @PhotonBrowser on X →
               </a>
             </>
           ) : (
-            <p className="relative z-10 text-sm text-on-overlay/85 sm:text-base">
+            <p className="text-sm text-on-overlay/85 sm:text-base">
               We’ll email you when Photon is ready. Follow us on{' '}
               <a
                 href={xLink.href}
@@ -184,7 +181,7 @@ export function WaitlistSurface() {
       <MotionBorderBeam
         size="md"
         colorVariant="colorful"
-        strength={1}
+        strength={state === 'success' || state === 'duplicate' ? 0 : 1}
         active={
           state !== 'success' &&
           state !== 'duplicate' &&
