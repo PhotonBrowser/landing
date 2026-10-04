@@ -175,10 +175,10 @@ export function PrivacyPolicyPage() {
             For privacy questions, requests, or requests to remove your email
             from the waitlist, email{' '}
             <a
-              href="mailto:[YOUR PRIVACY/CONTACT EMAIL]"
+              href="mailto:getphotonbrowser@gmail.com"
               className="underline decoration-on-overlay/50 underline-offset-4 hover:decoration-on-overlay"
             >
-              [YOUR PRIVACY/CONTACT EMAIL]
+              getphotonbrowser@gmail.com
             </a>
             .
           </p>
