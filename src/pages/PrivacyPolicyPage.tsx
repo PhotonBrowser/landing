@@ -1,3 +1,5 @@
+import { motion, useReducedMotion } from 'motion/react';
+
 const sections = [
   {
     title: 'Information we collect',
@@ -132,8 +134,19 @@ const sections = [
 ];
 
 export function PrivacyPolicyPage() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <article className="max-h-[calc(100svh-10rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/15 bg-black/20 px-5 py-6 text-left text-on-overlay shadow-xl shadow-black/10 backdrop-blur-md sm:px-8 sm:py-8">
+    <motion.article
+      initial={shouldReduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : { duration: 0.45, ease: 'easeOut' }
+      }
+      className="max-h-[calc(100svh-10rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/15 bg-black/20 px-5 py-6 text-left text-on-overlay shadow-xl shadow-black/10 backdrop-blur-md sm:px-8 sm:py-8"
+    >
       <h1 className="mt-2 font-heading text-3xl font-normal tracking-tight sm:text-4xl">
         Privacy Policy
       </h1>
@@ -177,6 +190,6 @@ export function PrivacyPolicyPage() {
       >
         Back to home
       </a>
-    </article>
+    </motion.article>
   );
 }
