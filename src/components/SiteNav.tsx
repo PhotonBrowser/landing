@@ -61,37 +61,28 @@ export function SiteNav({
       className="flex items-center gap-0 rounded-outer bg-overlay p-1 backdrop-blur-md sm:gap-0.5"
       transition={transition}
     >
-      <motion.a
-        layout
-        href="/"
-        aria-label="Home"
-        aria-current={currentPath === '/' ? 'page' : undefined}
-        inert={!showHomeLink}
-        tabIndex={showHomeLink ? 0 : -1}
-        animate={{
-          opacity: showHomeLink ? 1 : 0,
-          maxWidth: showHomeLink ? 120 : 0,
-          paddingLeft: showHomeLink ? 12 : 0,
-          paddingRight: showHomeLink ? 12 : 0,
-          scale: showHomeLink ? 1 : 0.94,
-          x: showHomeLink ? 0 : -6,
-        }}
-        transition={transition}
-        className={`inline-flex shrink-0 items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap rounded-inner py-1.5 text-xs leading-4 text-on-overlay transition-colors duration-500 hover:bg-overlay-hover ${currentPath === '/' ? 'bg-overlay-hover' : ''} ${showHomeLink ? '' : 'pointer-events-none'}`}
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="size-3.5 shrink-0 fill-none stroke-current stroke-2"
+      {showHomeLink && (
+        <motion.a
+          layout
+          href="/"
+          aria-label="Home"
+          transition={transition}
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-inner px-3 py-1.5 text-xs leading-4 text-on-overlay transition-colors duration-500 hover:bg-overlay-hover"
         >
-          <path
-            d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span>Home</span>
-      </motion.a>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-3.5 shrink-0 fill-none stroke-current stroke-2"
+          >
+            <path
+              d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>Home</span>
+        </motion.a>
+      )}
       {siteLinks.map((link) => (
         <SiteNavLink
           key={link.label}
@@ -121,11 +112,7 @@ export function XIconButton() {
       transition={shouldReduceMotion ? { duration: 0 } : WAITLIST_MORPH_SPRING}
       className="inline-flex size-8 items-center justify-center justify-self-end rounded-inner bg-overlay text-on-overlay backdrop-blur-md transition-colors duration-300 hover:bg-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
-      <img
-        src="/icons/x.svg"
-        alt=""
-        className="size-4 brightness-0 invert"
-      />
+      <img src="/icons/x.svg" alt="" className="size-4 brightness-0 invert" />
       <span className="sr-only">Photon on {xLink.label}</span>
     </motion.a>
   );

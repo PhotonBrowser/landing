@@ -13,11 +13,7 @@ export function BuiltByChip() {
         viewBox="0 0 16 16"
         className="size-3 fill-none stroke-current stroke-[1.5]"
       >
-        <path
-          d="m6 3 5 5-5 5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="m6 3 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </a>
   );
