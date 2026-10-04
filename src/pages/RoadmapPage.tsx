@@ -1,3 +1,4 @@
+import { githubLink } from '../config/site';
 import { Animated } from '../motion';
 
 export function RoadmapPage() {
@@ -22,7 +23,7 @@ export function RoadmapPage() {
       </Animated>
       <Animated
         as="a"
-        href="https://github.com/PhotonBrowser/landing"
+        href={githubLink.href}
         target="_blank"
         rel="noreferrer"
         preset="fadeUp"

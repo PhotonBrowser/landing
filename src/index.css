@@ -253,8 +253,29 @@
   border-bottom: 6px solid var(--color-overlay);
 }
 
-.t-avatar-item:hover .t-built-by-tooltip,
-.t-avatar-item:focus-within .t-built-by-tooltip {
+.t-contributor-tooltip {
+  top: auto;
+  bottom: calc(100% + 10px);
+  z-index: 20;
+  max-width: min(18rem, calc(100vw - 3rem));
+  white-space: nowrap;
+  text-align: center;
+}
+
+.t-contributor-tooltip::after {
+  top: 100%;
+  bottom: auto;
+  border-top: 6px solid var(--color-overlay);
+  border-bottom: 0;
+}
+
+.t-avatar-item:hover .t-built-by-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-delay: 80ms;
+}
+
+.t-avatar-item:hover .t-contributor-tooltip {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
   transition-delay: 80ms;

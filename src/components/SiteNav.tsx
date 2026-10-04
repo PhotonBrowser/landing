@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react';
-import { siteLinks } from '../config/site';
+import { githubLink, siteLinks, xLink } from '../config/site';
 import { WAITLIST_MORPH_SPRING } from '../constants/waitlist';
 
 function SiteNavLink({
@@ -113,22 +113,43 @@ export function XIconButton() {
 
   return (
     <motion.a
-      href="https://x.com/photonbrowser1"
+      href={xLink.href}
       target="_blank"
       rel="noreferrer"
-      aria-label="Photon on X"
+      aria-label={`Photon on ${xLink.label}`}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
       transition={shouldReduceMotion ? { duration: 0 } : WAITLIST_MORPH_SPRING}
       className="inline-flex size-8 items-center justify-center justify-self-end rounded-inner bg-overlay text-on-overlay backdrop-blur-md transition-colors duration-300 hover:bg-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="size-3.5 fill-current"
-      >
-        <path d="M18.901 1.153h3.68L14.54 10.12 24 22.847h-7.406l-5.8-7.584-6.637 7.584H.474l8.6-9.83L0 1.153h7.594l5.243 6.932zm-1.291 19.46h2.039L6.486 3.27H4.298z" />
-      </svg>
-      <span className="sr-only">Photon on X</span>
+      <img
+        src="/icons/x.svg"
+        alt=""
+        className="size-4 brightness-0 invert"
+      />
+      <span className="sr-only">Photon on {xLink.label}</span>
+    </motion.a>
+  );
+}
+
+export function GitHubIconButton() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <motion.a
+      href={githubLink.href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Photon on ${githubLink.label}`}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+      transition={shouldReduceMotion ? { duration: 0 } : WAITLIST_MORPH_SPRING}
+      className="inline-flex size-8 items-center justify-center justify-self-end rounded-inner bg-overlay text-on-overlay backdrop-blur-md transition-colors duration-300 hover:bg-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+    >
+      <img
+        src="/icons/github.svg"
+        alt=""
+        className="size-[18px] brightness-0 invert"
+      />
+      <span className="sr-only">Photon on {githubLink.label}</span>
     </motion.a>
   );
 }

@@ -1,19 +1,20 @@
 export const xLink = {
   label: 'X',
-  href: 'https://x.com/photonbrowser',
+  href: 'https://x.com/photonbrowser1',
   external: true,
   icon: 'x',
+} as const;
+
+export const githubLink = {
+  label: 'GitHub',
+  href: 'https://github.com/PhotonBrowser/landing',
+  external: true,
 } as const;
 
 export const siteLinks = [
   { label: 'About', href: '/about' },
   { label: 'Roadmap', href: '/roadmap' },
   { label: 'Privacy', href: '/privacy' },
-  {
-    label: 'GitHub',
-    href: 'https://github.com/PhotonBrowser/landing',
-    external: true,
-  },
 ] as const;
 
 export type Contributor = {
