@@ -14,7 +14,7 @@ export const WAITLIST_SURFACE = {
 } as const;
 
 export const WAITLIST_COPY = {
-  ready: 'You’re on the waitlist!',
+  ready: 'You’re on the list!',
   duplicate: 'You’re already on the waitlist!',
   submitting: 'Joining the waitlist…',
   error: 'Something went wrong. Please try again.',

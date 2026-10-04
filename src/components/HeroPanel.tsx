@@ -63,6 +63,9 @@ export function HeroPanel() {
             </div>
           </div>
         </div>
+        <footer className="px-5 pb-4 text-left text-xs text-on-overlay/50">
+          © 2026 Photon Browser. All rights reserved.
+        </footer>
       </div>
     </div>
   );
