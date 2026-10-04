@@ -6,8 +6,14 @@ export const xLink = {
 } as const;
 
 export const siteLinks = [
+  { label: 'About', href: '/about' },
   { label: 'Roadmap', href: '/roadmap' },
-  xLink,
+  { label: 'Privacy', href: '/privacy' },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/PhotonBrowser/landing',
+    external: true,
+  },
 ] as const;
 
 export type Contributor = {

@@ -1,17 +1,19 @@
 import type { ReactNode } from 'react';
 import { Animated } from '../motion';
-import { SiteNav } from './SiteNav';
+import { SiteNav, XIconButton } from './SiteNav';
 
 type HeroPanelProps = {
   children: ReactNode;
   contentClassName?: string;
   showHomeLink?: boolean;
+  currentPath: string;
 };
 
 export function HeroPanel({
   children,
   contentClassName,
   showHomeLink = false,
+  currentPath,
 }: HeroPanelProps) {
   return (
     <div className="relative isolate grid flex-1 overflow-hidden rounded-squircle bg-linear-to-b from-photon-iris-soft via-photon-sky-soft to-photon-mist-soft ring-1 ring-hairline ring-inset">
@@ -30,7 +32,7 @@ export function HeroPanel({
 
       {/* UI */}
       <div className="relative z-30 col-start-1 row-start-1 flex flex-col">
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center p-4">
+        <header className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-2 py-3 sm:px-4 sm:py-4">
           <Animated
             as="a"
             href="/"
@@ -41,15 +43,20 @@ export function HeroPanel({
             <img
               src="/brand-kit/logo/logo-color.svg"
               alt="Photon"
-              className="size-7"
+              className="size-8 drop-shadow-[0_2px_5px_rgba(20,35,90,0.35)] sm:size-9"
             />
           </Animated>
 
-          <Animated as="div" preset="fade" delay={0.1}>
-            <SiteNav showHomeLink={showHomeLink} />
+          <Animated
+            as="div"
+            preset="fade"
+            delay={0.1}
+            className="justify-self-center"
+          >
+            <SiteNav showHomeLink={showHomeLink} currentPath={currentPath} />
           </Animated>
 
-          <div aria-hidden="true" />
+          <XIconButton />
         </header>
 
         <div className="flex flex-1 items-center justify-center">

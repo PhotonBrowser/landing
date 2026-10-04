@@ -6,6 +6,16 @@ import { HeroPanel } from './components/HeroPanel';
 const HomePage = lazy(() =>
   import('./pages/HomePage').then((module) => ({ default: module.HomePage })),
 );
+const AboutPage = lazy(() =>
+  import('./pages/AboutPage').then((module) => ({
+    default: module.AboutPage,
+  })),
+);
+const RoadmapPage = lazy(() =>
+  import('./pages/RoadmapPage').then((module) => ({
+    default: module.RoadmapPage,
+  })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((module) => ({
     default: module.NotFoundPage,
@@ -25,7 +35,11 @@ function App() {
       ? 'home'
       : pathname === '/privacy' || pathname === '/privacy-policy'
         ? 'privacy'
-        : 'not-found';
+        : pathname === '/about'
+          ? 'about'
+          : pathname === '/roadmap'
+            ? 'roadmap'
+            : 'not-found';
 
   useEffect(() => {
     const handlePopState = () => setPathname(window.location.pathname);
@@ -90,7 +104,7 @@ function App() {
         opacity={1}
         animated="scroll"
       />
-      <HeroPanel showHomeLink={route !== 'home'}>
+      <HeroPanel showHomeLink={route !== 'home'} currentPath={pathname}>
         <AnimatePresence mode="wait">
           <motion.div
             key={route}
@@ -107,6 +121,10 @@ function App() {
             <Suspense fallback={null}>
               {route === 'home' ? (
                 <HomePage />
+              ) : route === 'about' ? (
+                <AboutPage />
+              ) : route === 'roadmap' ? (
+                <RoadmapPage />
               ) : route === 'privacy' ? (
                 <PrivacyPolicyPage />
               ) : (
