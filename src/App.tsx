@@ -92,7 +92,7 @@ function App() {
     : { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
-    <main className="flex min-h-svh bg-page p-4">
+    <main className="site-shell flex min-h-svh min-w-0 bg-page p-4">
       <GradualBlur
         target="parent"
         position="bottom"

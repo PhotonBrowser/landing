@@ -260,6 +260,46 @@
   transition-delay: 80ms;
 }
 
+/* Keep the hero compact on phones, including browsers that expose a wide
+   layout viewport while rendering on a narrow touch screen. */
+@media (max-width: 640px), (pointer: coarse) and (hover: none) {
+  .site-shell {
+    padding: 0.5rem;
+  }
+
+  .site-shell > :last-child {
+    min-width: 0;
+    border-radius: 2rem;
+  }
+
+  .site-shell header {
+    padding: 0.625rem;
+  }
+
+  .site-shell footer {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0 0.75rem 0.75rem;
+    font-size: 0.625rem;
+  }
+
+  .waitlist-surface {
+    width: min(100%, 24rem);
+  }
+
+  .home-title {
+    font-size: clamp(2.25rem, 9vw, 3rem);
+    line-height: 1.05;
+  }
+
+  .home-description {
+    max-width: 34rem;
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+}
+
 @keyframes validation-tooltip-in {
   from {
     opacity: 0;

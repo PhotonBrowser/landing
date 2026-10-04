@@ -113,7 +113,7 @@ export function XIconButton() {
 
   return (
     <motion.a
-      href="https://x.com/photonbrowser"
+      href="https://x.com/photonbrowser1"
       target="_blank"
       rel="noreferrer"
       aria-label="Photon on X"

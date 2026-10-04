@@ -61,7 +61,7 @@ export function HeroPanel({
 
         <div className="flex flex-1 items-center justify-center">
           <div
-            className={`flex max-w-3xl flex-col items-center gap-5 px-6 text-center ${
+            className={`flex w-full min-w-0 max-w-3xl flex-col items-center gap-5 px-6 text-center ${
               contentClassName ?? ''
             }`}
           >

@@ -118,7 +118,7 @@ function SurfaceContent({
           animate={{ opacity: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, filter: 'blur(4px)' }}
           transition={transition}
-          className="flex w-full flex-col gap-1 sm:flex-row sm:items-center"
+          className="flex w-full items-center gap-1"
         >
           <label htmlFor="waitlist-email" className="sr-only">
             Email address
@@ -195,7 +195,7 @@ export function WaitlistSurface() {
                 borderRadius: `${dimensions.radius}px`,
                 height: `${dimensions.height}px`,
                 padding: dimensions.padding,
-                width: `${dimensions.width}px`,
+                width: `min(${dimensions.width}px, 100%)`,
                 opacity: 0,
                 y: 16,
               }
@@ -204,7 +204,7 @@ export function WaitlistSurface() {
           borderRadius: `${dimensions.radius}px`,
           height: `${dimensions.height}px`,
           padding: dimensions.padding,
-          width: `${dimensions.width}px`,
+          width: `min(${dimensions.width}px, 100%)`,
           opacity: 1,
           y: 0,
         }}
@@ -229,7 +229,7 @@ export function WaitlistSurface() {
               }
         }
         onAnimationComplete={() => setHasEntered(true)}
-        className={`mx-auto mt-4 flex w-fit max-w-full items-center bg-overlay text-on-overlay ${
+        className={`waitlist-surface mx-auto mt-4 flex w-fit max-w-full items-center bg-overlay text-on-overlay ${
           validationError ? '!overflow-visible' : 'overflow-hidden'
         }`}
       >

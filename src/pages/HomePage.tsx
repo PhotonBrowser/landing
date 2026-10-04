@@ -12,7 +12,7 @@ export function HomePage() {
         as="h1"
         preset="blurUp"
         delay={0.2}
-        className="font-heading text-4xl font-normal tracking-tight text-balance text-on-overlay sm:text-6xl"
+        className="home-title w-full min-w-0 font-heading text-4xl font-normal tracking-tight text-balance text-on-overlay sm:text-6xl"
       >
         Meet Photon
       </Animated>
@@ -20,7 +20,7 @@ export function HomePage() {
         as="p"
         preset="blurUp"
         delay={0.3}
-        className="max-w-xl text-lg text-on-overlay/80"
+        className="home-description w-full max-w-xl text-lg text-on-overlay/80"
       >
         Photon is an independent browser built on Ladybird. Fast, private, and
         focused on a better web.
