@@ -43,6 +43,12 @@
 }
 
 :root {
+  --avatar-lift: -4px;
+  --avatar-dur: 320ms;
+  --avatar-scale: 1.05;
+  --avatar-falloff: 0.45;
+  --avatar-ease-in: cubic-bezier(0.22, 1, 0.36, 1);
+  --avatar-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -174,15 +180,16 @@
 
 .t-built-by-tooltip {
   position: absolute;
+  z-index: 30;
   bottom: calc(100% + 10px);
   left: 50%;
   max-width: max-content;
-  padding: 0.375rem 0.625rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 999px;
   background: var(--color-overlay);
   color: var(--color-on-overlay);
   backdrop-filter: blur(12px);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 300;
   white-space: nowrap;
   box-shadow: 0 4px 20px rgb(0 0 0 / 0.12);
@@ -202,6 +209,18 @@
 .t-avatar-item {
   position: relative;
   display: inline-flex;
+}
+
+.t-avatar {
+  transform-origin: center;
+  transform: translateY(var(--shift, 0px)) scale(var(--scale-active, 1));
+  transition: transform var(--avatar-dur) var(--avatar-ease-in);
+  will-change: transform;
+}
+
+.t-avatar:hover,
+.t-avatar:focus-within {
+  z-index: 1;
 }
 
 .t-built-by-tooltip::after {
@@ -235,7 +254,7 @@
 }
 
 .t-avatar-item:hover .t-built-by-tooltip,
-.t-avatar-item:focus-visible .t-built-by-tooltip {
+.t-avatar-item:focus-within .t-built-by-tooltip {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
   transition-delay: 80ms;
@@ -254,6 +273,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .t-avatar {
+    /* biome-ignore lint/complexity/noImportantStyles: required reduced-motion override for inline spring timing */
+    transition: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required reduced-motion override for inline spring transforms */
+    transform: none !important;
+  }
+
   .t-built-by-tooltip,
   .t-validation-tooltip {
     transition: none;

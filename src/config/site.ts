@@ -7,7 +7,15 @@ export const xLink = {
 
 export const siteLinks = [{ label: 'FAQ', href: '#faq' }, xLink] as const;
 
-export const contributors = [
+export type Contributor = {
+  name: string;
+  displayName: string;
+  href?: string;
+  avatar?: string;
+  platform?: string;
+};
+
+export const contributors: readonly Contributor[] = [
   {
     name: '@theo_slat',
     displayName: 'Theo',
@@ -15,4 +23,8 @@ export const contributors = [
     avatar: 'https://unavatar.io/x/theo_slat',
     platform: 'x',
   },
-] as const;
+  {
+    name: '@ollie',
+    displayName: 'Ollie',
+  },
+];
