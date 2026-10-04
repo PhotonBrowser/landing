@@ -10,7 +10,7 @@ export const WAITLIST_MORPH_SPRING = {
 export const WAITLIST_SURFACE = {
   idle: { radius: 16, height: 44, padding: '4px', width: 384 },
   submitting: { radius: 22, height: 44, padding: '4px 16px', width: 280 },
-  complete: { radius: 20, height: 136, padding: '12px', width: 384 },
+  complete: { radius: 18, height: 112, padding: '12px 16px', width: 344 },
 } as const;
 
 export const WAITLIST_COPY = {

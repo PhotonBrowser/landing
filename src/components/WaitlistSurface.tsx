@@ -68,27 +68,46 @@ function SurfaceContent({
           animate={{ opacity: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, filter: 'blur(4px)' }}
           transition={transition}
-          className="flex w-full flex-col items-center gap-1 text-center"
+          className="relative flex w-full flex-col items-center gap-1 text-center"
           role="status"
           aria-live="polite"
         >
-          <h2 className="font-heading text-lg font-medium tracking-tight text-balance">
+          {state === 'success' && !shouldReduceMotion && (
+            <span className="waitlist-success-glow" aria-hidden="true" />
+          )}
+          <h2 className="relative z-10 font-heading text-lg font-medium tracking-tight text-balance">
             {state === 'duplicate'
               ? WAITLIST_COPY.duplicate
               : WAITLIST_COPY.ready}
           </h2>
-          <p className="text-sm text-on-overlay/85 sm:text-base">
-            We’ll email you when Photon is ready. Follow us on{' '}
-            <a
-              href={xLink.href}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay"
-            >
-              X
-            </a>{' '}
-            for updates.
-          </p>
+          {state === 'success' ? (
+            <>
+              <p className="relative z-10 text-sm text-on-overlay/85 sm:text-base">
+                We’ll let you know when Photon is ready.
+              </p>
+              <a
+                href={xLink.href}
+                target="_blank"
+                rel="noreferrer"
+                className="relative z-10 text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
+              >
+                Follow @PhotonBrowser on X →
+              </a>
+            </>
+          ) : (
+            <p className="relative z-10 text-sm text-on-overlay/85 sm:text-base">
+              We’ll email you when Photon is ready. Follow us on{' '}
+              <a
+                href={xLink.href}
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay"
+              >
+                X
+              </a>{' '}
+              for updates.
+            </p>
+          )}
         </motion.div>
       ) : (
         <motion.form
@@ -138,7 +157,7 @@ function SurfaceContent({
           </div>
           <Button
             type="submit"
-            className="h-9 !rounded-[calc(var(--surface-radius)-4px)] bg-paper px-4 py-2 text-xs text-foreground shadow-sm transition-colors duration-500 hover:bg-white/90"
+            className="h-9 !rounded-[10px] bg-paper px-4 py-2 text-xs text-foreground shadow-sm transition-colors duration-500 hover:bg-white/90"
           >
             Join waitlist
           </Button>

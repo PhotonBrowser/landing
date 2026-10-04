@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { siteLinks } from '../config/site';
 
 function SiteNavLink({
@@ -33,15 +34,62 @@ function SiteNavLink({
   );
 }
 
-export function SiteNav() {
+export function SiteNav({ showHomeLink = false }: { showHomeLink?: boolean }) {
   return (
-    <nav
+    <motion.nav
+      layout
       aria-label="Primary"
       className="flex items-center gap-0.5 rounded-outer bg-overlay p-1 backdrop-blur-md"
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
     >
+      <AnimatePresence initial={false} mode="popLayout">
+        {showHomeLink && (
+          <motion.a
+            key="home-link"
+            href="/"
+            aria-label="Home"
+            initial={{
+              opacity: 0,
+              maxWidth: 0,
+              paddingLeft: 0,
+              paddingRight: 0,
+              scale: 0.96,
+            }}
+            animate={{
+              opacity: 1,
+              maxWidth: 120,
+              paddingLeft: 16,
+              paddingRight: 16,
+              scale: 1,
+            }}
+            exit={{
+              opacity: 0,
+              maxWidth: 0,
+              paddingLeft: 0,
+              paddingRight: 0,
+              scale: 0.96,
+            }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap rounded-inner px-4 py-1.5 text-xs text-on-overlay transition-colors duration-500 hover:bg-overlay-hover"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="size-3.5 shrink-0 fill-none stroke-current stroke-2"
+            >
+              <path
+                d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>Home</span>
+          </motion.a>
+        )}
+      </AnimatePresence>
       {siteLinks.map((link) => (
         <SiteNavLink key={link.label} {...link} />
       ))}
-    </nav>
+    </motion.nav>
   );
 }

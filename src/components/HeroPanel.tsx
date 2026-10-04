@@ -5,9 +5,14 @@ import { SiteNav } from './SiteNav';
 type HeroPanelProps = {
   children: ReactNode;
   contentClassName?: string;
+  showHomeLink?: boolean;
 };
 
-export function HeroPanel({ children, contentClassName }: HeroPanelProps) {
+export function HeroPanel({
+  children,
+  contentClassName,
+  showHomeLink = false,
+}: HeroPanelProps) {
   return (
     <div className="relative isolate grid flex-1 overflow-hidden rounded-squircle bg-linear-to-b from-photon-iris-soft via-photon-sky-soft to-photon-mist-soft ring-1 ring-hairline ring-inset">
       {/* Background */}
@@ -41,7 +46,7 @@ export function HeroPanel({ children, contentClassName }: HeroPanelProps) {
           </Animated>
 
           <Animated as="div" preset="fade" delay={0.1}>
-            <SiteNav />
+            <SiteNav showHomeLink={showHomeLink} />
           </Animated>
 
           <div aria-hidden="true" />
