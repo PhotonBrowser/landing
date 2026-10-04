@@ -1,7 +1,11 @@
-export const siteLinks = [
-  { label: 'FAQ', href: '#faq' },
-  { label: 'X', href: 'https://x.com', external: true, icon: 'x' },
-] as const;
+export const xLink = {
+  label: 'X',
+  href: 'https://x.com/photonbrowser',
+  external: true,
+  icon: 'x',
+} as const;
+
+export const siteLinks = [{ label: 'FAQ', href: '#faq' }, xLink] as const;
 
 export const contributors = [
   {

@@ -195,6 +195,10 @@
     transform 150ms ease-out;
 }
 
+.gradual-blur-hover:hover {
+  --gradual-blur-hover-factor: var(--gradual-blur-hover-intensity);
+}
+
 .t-avatar-item {
   position: relative;
   display: inline-flex;
@@ -259,7 +263,8 @@
 
 /* Unlayered so the spring wins over Tailwind `transition-*` utilities, which
    live in the utilities layer and would otherwise override the base rule. */
-button:not(:disabled) {
+button:not(:disabled),
+.pressable {
   transition-property:
     scale, background-color, border-color, color, fill, stroke, box-shadow,
     opacity;
@@ -268,15 +273,18 @@ button:not(:disabled) {
     cubic-bezier(0.22, 1.2, 0.36, 1), ease-out, ease-out, ease-out, ease-out,
     ease-out, ease-out, ease-out;
 }
-button:not(:disabled):active {
+button:not(:disabled):active,
+.pressable:active {
   scale: 0.98;
   transition-duration: 0.12s, 0.25s, 0.25s, 0.25s, 0.25s, 0.25s, 0.25s, 0.25s;
 }
 @media (prefers-reduced-motion: reduce) {
-  button:not(:disabled) {
+  button:not(:disabled),
+  .pressable {
     transition: none;
   }
-  button:not(:disabled):active {
+  button:not(:disabled):active,
+  .pressable:active {
     scale: 1;
   }
 }

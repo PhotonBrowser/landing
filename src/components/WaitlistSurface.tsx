@@ -4,6 +4,7 @@ import { type CSSProperties, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { xLink } from '../config/site';
 import {
   WAITLIST_COPY,
   WAITLIST_MORPH_SPRING,
@@ -77,22 +78,16 @@ function SurfaceContent({
               : WAITLIST_COPY.ready}
           </h2>
           <p className="text-sm text-on-overlay/85 sm:text-base">
-            We’ll email you when Photon is ready.
-          </p>
-          <p className="text-sm text-on-overlay/85 sm:text-base">
-            Follow along as we build Photon on{' '}
+            We’ll email you when Photon is ready. Follow us on{' '}
             <a
-              href="https://x.com"
+              href={xLink.href}
               target="_blank"
               rel="noreferrer"
               className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay"
             >
               X
-            </a>
-            .
-          </p>
-          <p className="pt-1 text-sm text-on-overlay/70">
-            Thanks for being here :)
+            </a>{' '}
+            for updates.
           </p>
         </motion.div>
       ) : (
@@ -236,6 +231,15 @@ export function WaitlistSurface() {
           {WAITLIST_COPY.error}
         </p>
       )}
+      {/*<p className="mt-2 text-xs leading-relaxed text-on-overlay/75">
+        By joining the waitlist, you agree to receive Photon-related updates.{' '}
+        <a
+          href="/privacy"
+          className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:text-on-overlay hover:decoration-on-overlay focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          Privacy Policy
+        </a>
+      </p>*/}
     </>
   );
 }

@@ -1,0 +1,28 @@
+{
+  "recordType": "vercel-deployment-metadata",
+  "recordedAt": "2026-10-04",
+  "captureMethod": "Manually transcribed from the authenticated Vercel deployment overview; this is not a raw API export.",
+  "team": "theoslaters-projects",
+  "project": "photonapp",
+  "deploymentId": "D77bQxjQFno4xTFwWXYPyhR9adME",
+  "deploymentUrl": "https://photonapp-3wbvfdw3v-theoslaters-projects.vercel.app/",
+  "createdAt": "2026-09-23T22:11:56+01:00",
+  "environment": "Production",
+  "statusAtCapture": "Ready",
+  "branch": "main",
+  "repository": "https://github.com/PhotonBrowser/landing",
+  "commit": {
+    "sha": "3c5b97fca9f16f6da078381b9eef0ecee95d1705",
+    "subject": "loading",
+    "committedAt": "2026-09-23T22:11:26+01:00",
+    "url": "https://github.com/PhotonBrowser/landing/commit/3c5b97fca9f16f6da078381b9eef0ecee95d1705"
+  },
+  "duration": "23s",
+  "dashboardSource": "https://vercel.com/theoslaters-projects/photonapp/D77bQxjQFno4xTFwWXYPyhR9adME",
+  "screenshot": null,
+  "notes": [
+    "Vercel showed the deployment as Ready and identified the deployment URL, project, creation time, branch, and linked commit when inspected on 2026-10-04.",
+    "A direct unauthenticated request to the deployment URL redirected to Vercel SSO during this review.",
+    "The Git commit date is 30 seconds before the dashboard's displayed deployment creation time."
+  ]
+}
