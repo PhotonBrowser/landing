@@ -122,9 +122,11 @@ export function HeroPanel({
           </div>
         </div>
 
-        <footer className="flex items-center justify-between px-4 pb-2 text-xs text-on-overlay/75">
-          <span>© 2026 Photon Browser. All rights reserved.</span>
-          <div className="flex items-center gap-4">
+        <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 pb-2 text-xs text-on-overlay/75">
+          <span className="order-2 w-full text-center sm:order-0 sm:w-auto sm:text-left">
+            © 2026 Photon Browser. All rights reserved.
+          </span>
+          <div className="order-1 flex w-full min-w-0 items-center justify-between gap-2 sm:order-0 sm:w-auto sm:gap-4">
             <TheoCredit />
             <a
               href="/privacy"
