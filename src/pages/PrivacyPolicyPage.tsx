@@ -186,7 +186,7 @@ export function PrivacyPolicyPage() {
       </div>
       <a
         href="/"
-        className="pressable mt-7 inline-flex rounded-[12px] border border-white/30 bg-white/15 px-5 py-2.5 text-sm text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="pressable mt-7 inline-flex rounded-outer border border-white/30 bg-white/15 px-5 py-2.5 text-sm text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         Back to home
       </a>

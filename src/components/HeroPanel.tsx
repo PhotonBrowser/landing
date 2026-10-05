@@ -12,8 +12,8 @@ function TheoCredit() {
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap text-on-overlay/65">
       <span>Built with</span>
-      <span aria-label="love" role="img" className="text-rose-500">
-        ♥
+      <span aria-label="love" role="img">
+        ❤️
       </span>
       <span>by:</span>
       <span className="max-w-24">

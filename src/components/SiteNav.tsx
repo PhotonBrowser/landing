@@ -151,7 +151,7 @@ export function GitHubIconButton() {
       <img
         src="/icons/github.svg"
         alt=""
-        className="size-[18px] brightness-0 invert"
+        className="size-4.5 brightness-0 invert"
       />
       <span className="sr-only">Photon on {githubLink.label}</span>
     </motion.a>
