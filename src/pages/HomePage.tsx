@@ -4,7 +4,7 @@ import { Animated } from '../motion';
 
 export function HomePage() {
   return (
-    <>
+    <div className="home-hero-content -translate-y-6 flex w-full flex-col items-center gap-5">
       <Animated preset="blurUp" delay={0.1}>
         <BuiltByChip />
       </Animated>
@@ -28,6 +28,6 @@ export function HomePage() {
       <div className="w-full">
         <WaitlistSurface />
       </div>
-    </>
+    </div>
   );
 }

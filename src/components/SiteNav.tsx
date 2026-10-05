@@ -9,6 +9,7 @@ function SiteNavLink({
   icon,
   transition,
   active,
+  shouldReduceMotion,
 }: {
   label: string;
   href: string;
@@ -16,6 +17,7 @@ function SiteNavLink({
   icon?: 'x';
   transition: typeof WAITLIST_MORPH_SPRING | { duration: number };
   active: boolean;
+  shouldReduceMotion: boolean | null;
 }) {
   return (
     <motion.a
@@ -25,18 +27,19 @@ function SiteNavLink({
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
       aria-current={active ? 'page' : undefined}
       aria-label={icon ? label : undefined}
-      className={`inline-flex items-center justify-center rounded-inner text-[11px] leading-4 text-on-overlay transition-colors duration-500 hover:bg-overlay-hover sm:text-xs ${active ? 'bg-overlay-hover' : ''} ${icon ? 'size-7 p-0' : 'px-1.5 py-1.5 sm:px-4'}`}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+      className={`relative inline-flex shrink-0 items-center justify-center rounded-inner text-[11px] leading-4 text-on-overlay transition-colors duration-300 hover:bg-overlay-hover sm:text-xs ${active ? 'bg-overlay-hover' : ''} ${icon ? 'size-7 p-0' : 'px-1.5 py-1.5 sm:px-4'}`}
     >
       {icon === 'x' ? (
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="size-3.5 fill-current"
+          className="relative z-10 size-3.5 fill-current"
         >
           <path d="M18.901 1.153h3.68L14.54 10.12 24 22.847h-7.406l-5.8-7.584-6.637 7.584H.474l8.6-9.83L0 1.153h7.594l5.243 6.932zm-1.291 19.46h2.039L6.486 3.27H4.298z" />
         </svg>
       ) : (
-        label
+        <span className="relative z-10">{label}</span>
       )}
     </motion.a>
   );
@@ -56,16 +59,29 @@ export function SiteNav({
 
   return (
     <motion.nav
-      layout
       aria-label="Primary"
-      className="flex items-center gap-0 rounded-outer bg-overlay p-1 backdrop-blur-md sm:gap-0.5"
+      className="flex w-max items-center gap-0 rounded-outer bg-overlay p-1 backdrop-blur-md sm:gap-0.5"
       transition={transition}
     >
-      {showHomeLink && (
+      <motion.div
+        initial={false}
+        animate={{ width: showHomeLink ? 'auto' : 0 }}
+        transition={transition}
+        aria-hidden={!showHomeLink}
+        className="shrink-0 overflow-hidden"
+      >
         <motion.a
-          layout
           href="/"
           aria-label="Home"
+          tabIndex={showHomeLink ? undefined : -1}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+          animate={
+            shouldReduceMotion
+              ? { opacity: 1, filter: 'blur(0px)', x: 0 }
+              : showHomeLink
+                ? { opacity: 1, filter: 'blur(0px)', x: 0 }
+                : { opacity: 0, filter: 'blur(8px)', x: -8 }
+          }
           transition={transition}
           className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-inner px-3 py-1.5 text-xs leading-4 text-on-overlay transition-colors duration-500 hover:bg-overlay-hover"
         >
@@ -82,12 +98,13 @@ export function SiteNav({
           </svg>
           <span>Home</span>
         </motion.a>
-      )}
+      </motion.div>
       {siteLinks.map((link) => (
         <SiteNavLink
           key={link.label}
           {...link}
           transition={transition}
+          shouldReduceMotion={shouldReduceMotion}
           active={
             !('external' in link && link.external) &&
             (currentPath === link.href ||
@@ -108,7 +125,7 @@ export function XIconButton() {
       target="_blank"
       rel="noreferrer"
       aria-label={`Photon on ${xLink.label}`}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
       transition={shouldReduceMotion ? { duration: 0 } : WAITLIST_MORPH_SPRING}
       className="inline-flex size-8 items-center justify-center justify-self-end rounded-inner bg-overlay text-on-overlay backdrop-blur-md transition-colors duration-300 hover:bg-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
@@ -127,7 +144,7 @@ export function GitHubIconButton() {
       target="_blank"
       rel="noreferrer"
       aria-label={`Photon on ${githubLink.label}`}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
       transition={shouldReduceMotion ? { duration: 0 } : WAITLIST_MORPH_SPRING}
       className="inline-flex size-8 items-center justify-center justify-self-end rounded-inner bg-overlay text-on-overlay backdrop-blur-md transition-colors duration-300 hover:bg-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
