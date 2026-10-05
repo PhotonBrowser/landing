@@ -185,7 +185,7 @@ export function WaitlistSurface() {
         active={
           state !== 'success' &&
           state !== 'duplicate' &&
-          shouldReduceMotion === false
+          shouldReduceMotion !== true
         }
         theme="dark"
         initial={
