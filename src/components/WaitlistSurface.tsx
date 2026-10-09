@@ -36,6 +36,10 @@ function SurfaceContent({
         ease: 'easeOut' as const,
         delay: hasEntered ? 0 : 0.4,
       };
+  const textTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.24, ease: 'easeOut' as const };
+  const textRevealDelay = shouldReduceMotion ? 0 : hasEntered ? 0.12 : 0.5;
   const isComplete = state === 'success';
 
   return (
@@ -57,35 +61,58 @@ function SurfaceContent({
             className="size-5 motion-reduce:animate-none"
             aria-hidden="true"
           />
-          <span>{WAITLIST_COPY.submitting}</span>
+          <span className="whitespace-nowrap">{WAITLIST_COPY.submitting}</span>
         </motion.div>
       ) : isComplete ? (
         <motion.div
           key="complete"
-          initial={
-            shouldReduceMotion ? false : { opacity: 0, filter: 'blur(5px)' }
-          }
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, filter: 'blur(4px)' }}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={transition}
-          className="relative flex w-full flex-col items-center gap-1 text-center"
+          className="relative flex w-full min-w-0 flex-col items-center gap-1 overflow-hidden text-center"
           role="status"
           aria-live="polite"
         >
-          <h2 className="font-heading text-lg font-medium tracking-tight text-balance">
+          <motion.h2
+            initial={
+              shouldReduceMotion
+                ? false
+                : { opacity: 0, y: 3, filter: 'blur(4px)' }
+            }
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ ...textTransition, delay: textRevealDelay }}
+            className="max-w-full whitespace-nowrap font-heading text-lg font-medium tracking-tight"
+          >
             {WAITLIST_COPY.ready}
-          </h2>
-          <p className="text-sm text-on-overlay/85 sm:text-base">
+          </motion.h2>
+          <motion.p
+            initial={
+              shouldReduceMotion
+                ? false
+                : { opacity: 0, y: 3, filter: 'blur(4px)' }
+            }
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ ...textTransition, delay: textRevealDelay + 0.04 }}
+            className="max-w-full whitespace-nowrap text-sm text-on-overlay/85 sm:text-base"
+          >
             We’ll let you know when Photon is ready.
-          </p>
-          <a
+          </motion.p>
+          <motion.a
             href={xLink.href}
             target="_blank"
             rel="noreferrer"
-            className="text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
+            initial={
+              shouldReduceMotion
+                ? false
+                : { opacity: 0, y: 3, filter: 'blur(4px)' }
+            }
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ ...textTransition, delay: textRevealDelay + 0.08 }}
+            className="max-w-full whitespace-nowrap text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
           >
             Follow @PhotonBrowser on X →
-          </a>
+          </motion.a>
         </motion.div>
       ) : (
         <motion.form
