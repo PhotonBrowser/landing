@@ -29,4 +29,4 @@ Recent history mixes conventional prefixes such as `feat:` and `chore:` with con
 
 ## Configuration and Secrets
 
-The waitlist integration reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the environment. Configure them locally without committing `.env` values or other credentials; never place secret service-role keys in client-side variables.
+The waitlist integration reads `VITE_CLERK_PUBLISHABLE_KEY` from the environment. Copy `.env.example` to `.env.local` and add the publishable key from the Clerk Dashboard. Configure production values in the hosting provider without committing `.env` values or other credentials; never place Clerk secret keys in client-side variables.

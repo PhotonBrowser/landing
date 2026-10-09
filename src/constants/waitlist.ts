@@ -1,5 +1,3 @@
-export const WAITLIST_API_DELAY_MS = 1500;
-
 export const WAITLIST_MORPH_SPRING = {
   type: 'spring' as const,
   stiffness: 240,
@@ -15,7 +13,6 @@ export const WAITLIST_SURFACE = {
 
 export const WAITLIST_COPY = {
   ready: 'You’re on the list!',
-  duplicate: 'You’re already on the waitlist!',
   submitting: 'Joining the waitlist…',
   error: 'Something went wrong. Please try again.',
   emailRequired: 'Enter your email address',

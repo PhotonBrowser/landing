@@ -1,15 +1,11 @@
+import { useWaitlist as useClerkWaitlist } from '@clerk/react';
 import { type FormEvent, useState } from 'react';
-import { WAITLIST_API_DELAY_MS, WAITLIST_COPY } from '../constants/waitlist';
-import { supabase } from '../utils/supabase';
+import { WAITLIST_COPY } from '../constants/waitlist';
 
-export type WaitlistState =
-  | 'idle'
-  | 'submitting'
-  | 'success'
-  | 'duplicate'
-  | 'error';
+export type WaitlistState = 'idle' | 'submitting' | 'success' | 'error';
 
 export function useWaitlist() {
+  const { waitlist } = useClerkWaitlist();
   const [state, setState] = useState<WaitlistState>('idle');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -38,17 +34,9 @@ export function useWaitlist() {
     setState('submitting');
 
     try {
-      await new Promise((resolve) =>
-        setTimeout(resolve, WAITLIST_API_DELAY_MS),
-      );
-      const { error } = await supabase
-        .from('waitlist')
-        .insert({ email: emailField.value.trim().toLowerCase() });
-
-      if (error?.code === '23505') {
-        setState('duplicate');
-        return;
-      }
+      const { error } = await waitlist.join({
+        emailAddress: emailField.value.trim().toLowerCase(),
+      });
 
       if (error) throw error;
 

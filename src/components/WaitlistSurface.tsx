@@ -36,7 +36,7 @@ function SurfaceContent({
         ease: 'easeOut' as const,
         delay: hasEntered ? 0 : 0.4,
       };
-  const isComplete = state === 'success' || state === 'duplicate';
+  const isComplete = state === 'success';
 
   return (
     <AnimatePresence mode="wait">
@@ -73,38 +73,19 @@ function SurfaceContent({
           aria-live="polite"
         >
           <h2 className="font-heading text-lg font-medium tracking-tight text-balance">
-            {state === 'duplicate'
-              ? WAITLIST_COPY.duplicate
-              : WAITLIST_COPY.ready}
+            {WAITLIST_COPY.ready}
           </h2>
-          {state === 'success' ? (
-            <>
-              <p className="text-sm text-on-overlay/85 sm:text-base">
-                We’ll let you know when Photon is ready.
-              </p>
-              <a
-                href={xLink.href}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
-              >
-                Follow @PhotonBrowser on X →
-              </a>
-            </>
-          ) : (
-            <p className="text-sm text-on-overlay/85 sm:text-base">
-              We’ll email you when Photon is ready. Follow us on{' '}
-              <a
-                href={xLink.href}
-                target="_blank"
-                rel="noreferrer"
-                className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay"
-              >
-                X
-              </a>{' '}
-              for updates.
-            </p>
-          )}
+          <p className="text-sm text-on-overlay/85 sm:text-base">
+            We’ll let you know when Photon is ready.
+          </p>
+          <a
+            href={xLink.href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-on-overlay/85 underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:decoration-on-overlay sm:text-base"
+          >
+            Follow @PhotonBrowser on X →
+          </a>
         </motion.div>
       ) : (
         <motion.form
@@ -172,7 +153,7 @@ export function WaitlistSurface() {
   const dimensions =
     state === 'submitting'
       ? WAITLIST_SURFACE.submitting
-      : state === 'success' || state === 'duplicate'
+      : state === 'success'
         ? WAITLIST_SURFACE.complete
         : WAITLIST_SURFACE.idle;
 
@@ -181,12 +162,8 @@ export function WaitlistSurface() {
       <MotionBorderBeam
         size="md"
         colorVariant="colorful"
-        strength={state === 'success' || state === 'duplicate' ? 0 : 1}
-        active={
-          state !== 'success' &&
-          state !== 'duplicate' &&
-          shouldReduceMotion !== true
-        }
+        strength={state === 'success' ? 0 : 1}
+        active={state !== 'success' && shouldReduceMotion !== true}
         theme="dark"
         initial={
           shouldReduceMotion
@@ -247,15 +224,6 @@ export function WaitlistSurface() {
           {WAITLIST_COPY.error}
         </p>
       )}
-      {/*<p className="mt-2 text-xs leading-relaxed text-on-overlay/75">
-        By joining the waitlist, you agree to receive Photon-related updates.{' '}
-        <a
-          href="/privacy"
-          className="underline decoration-on-overlay/50 underline-offset-4 transition-colors hover:text-on-overlay hover:decoration-on-overlay focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          Privacy Policy
-        </a>
-      </p>*/}
     </>
   );
 }

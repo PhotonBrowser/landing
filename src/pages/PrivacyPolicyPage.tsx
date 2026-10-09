@@ -27,9 +27,10 @@ const sections = [
       <>
         <p>
           We use your email address to add you to and manage your place on the
-          Photon waitlist, contact you about Photon availability, releases,
-          early access, and related project updates, and protect the waitlist
-          from abuse.
+          Photon waitlist, confirm your request, and send an early-access
+          invitation if you are selected. We may also send occasional updates
+          about the waitlist and early access. We do not use it for unrelated
+          marketing emails.
         </p>
         <p>We do not sell your personal information.</p>
       </>
@@ -41,7 +42,8 @@ const sections = [
       <>
         <p>
           We process your email address because you have asked to join the
-          Photon waitlist and receive Photon-related updates.
+          Photon waitlist and receive emails about your request and early
+          access.
         </p>
         <p>
           Where our processing relies on your consent, you may withdraw that
@@ -56,9 +58,10 @@ const sections = [
       <>
         <p>
           We use service providers to operate the Photon website and waitlist.
-          Supabase stores waitlist information. Our website hosting and email
-          delivery providers may also process information where necessary to
-          provide their services.
+          Clerk stores and manages waitlist entries and sends confirmation and
+          invitation emails when those templates are enabled. Our website
+          hosting provider may also process technical information where
+          necessary to provide its services.
         </p>
         <p>
           We do not share your email address with third parties for their own
@@ -151,7 +154,7 @@ export function PrivacyPolicyPage() {
         Privacy Policy
       </h1>
       <p className="mt-2 text-sm text-on-overlay/65">
-        Last updated: 4 October 2026
+        Last updated: 9 October 2026
       </p>
       <div className="mt-6 space-y-6 text-sm leading-relaxed text-on-overlay/85 sm:text-base">
         <p>
