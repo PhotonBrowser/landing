@@ -7,7 +7,7 @@ export const xLink = {
 
 export const githubLink = {
   label: 'GitHub',
-  href: 'https://github.com/PhotonBrowser/landing',
+  href: 'https://github.com/PhotonBrowser/photon',
   external: true,
 } as const;
 
